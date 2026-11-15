@@ -1,0 +1,428 @@
+#!/bin/bash
+# Start, stop, the chromeless window, backup, restore and check.
+# The database is copied with the SQLite backup API, so a running server is a safe source.
+# stop sends TERM, and only to a listener whose command contains server.rb.
+# restore asks for the word ja, keeps a safety copy, and does not start the server again.
+set -eu
+
+APP="$(cd "$(dirname "$0")" && pwd)"
+ROOT="${PRAXIS_ROOT:-$APP}"
+DB="${PRAXIS_DB:-$ROOT/data/praxis.db}"
+PORT="${PRAXIS_PORT:-8765}"
+BIND="${PRAXIS_BIND:-127.0.0.1}"
+BACKUP_DIR="${PRAXIS_BACKUP_DIR:-$ROOT/sicherungen}"
+# True when that ruby can open the chart. A Mac system ruby without the sqlite3 gem is skipped.
+ruby_ready() {
+  [ -n "$1" ] && [ -x "$1" ] && "$1" -e 'require "sqlite3"; require "webrick"' >/dev/null 2>&1
+}
+
+pick_ruby() {
+  local candidate
+  if ruby_ready "${PRAXIS_RUBY:-}"; then
+    printf '%s\n' "$PRAXIS_RUBY"
+    return
+  fi
+  if ruby_ready /usr/bin/ruby; then
+    printf '%s\n' /usr/bin/ruby
+    return
+  fi
+  if command -v ruby >/dev/null 2>&1 && ruby_ready "$(command -v ruby)"; then
+    command -v ruby
+    return
+  fi
+  for candidate in /opt/homebrew/opt/ruby/bin/ruby /usr/local/opt/ruby/bin/ruby; do
+    if ruby_ready "$candidate"; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done
+  if [ -x /usr/bin/ruby ]; then
+    printf '%s\n' /usr/bin/ruby
+  elif command -v ruby >/dev/null 2>&1; then
+    command -v ruby
+  else
+    printf '%s\n' /usr/bin/ruby
+  fi
+}
+RUBY=$(pick_ruby)
+if [ -x /usr/bin/sqlite3 ]; then
+  SQLITE=/usr/bin/sqlite3
+elif command -v sqlite3 >/dev/null 2>&1; then
+  SQLITE=$(command -v sqlite3)
+else
+  SQLITE=/usr/bin/sqlite3
+fi
+LOKAL_PORT=8764
+
+# Prints one line to stderr and exits 1.
+die() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+
+# PID listening on the practice port, or empty.
+listener_pid() {
+  lsof -nP -t -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | head -1 || true
+}
+
+# True only when that process command contains server.rb. A foreign program on the port is left alone.
+is_ours() {
+  local cmd
+  cmd=$(ps -p "$1" -o command= 2>/dev/null || true)
+  case "$cmd" in
+    *server.rb*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Absolute path of a file that exists.
+abs_path() {
+  local dir base
+  [ -f "$1" ] || return 1
+  dir=$(cd "$(dirname "$1")" && pwd) || return 1
+  base=$(basename "$1")
+  printf '%s/%s\n' "$dir" "$base"
+}
+
+# Online SQLite backup, so a running server is safe. The copy is then forced to a single file, with no wal or shm beside it.
+copy_db() {
+  "$RUBY" - "$1" "$2" <<'RUBY'
+require "sqlite3"
+require "fileutils"
+src_path, dest_path = ARGV
+FileUtils.rm_f(dest_path)
+src = SQLite3::Database.new(src_path)
+dest = SQLite3::Database.new(dest_path)
+backup = SQLite3::Backup.new(dest, "main", src, "main")
+backup.step(-1)
+backup.finish
+src.close
+dest.close
+RUBY
+  local mode
+  mode=$("$SQLITE" "$2" "PRAGMA journal_mode = DELETE;")
+  rm -f "$2-wal" "$2-shm"
+  [ "$mode" = "delete" ]
+}
+
+# Runs integrity_check and foreign_key_check. A failure is printed and returned.
+integrity_report() {
+  local result fk
+  result=$("$SQLITE" "$1" "PRAGMA integrity_check;")
+  if [ "$result" != "ok" ]; then
+    printf '%s\n' "$result" >&2
+    return 1
+  fi
+  fk=$("$SQLITE" "$1" "PRAGMA foreign_key_check;")
+  if [ -n "$fk" ]; then
+    printf '%s\n' "$fk" >&2
+    return 1
+  fi
+  return 0
+}
+
+# Timestamp used in backup file names.
+stamp() {
+  date +%Y-%m-%d-%H%M%S
+}
+
+# If this server is already up, prints that and exits 0. If the port is free, replaces this process with ruby.
+# A foreign listener is an error. This command does not open a browser.
+cmd_start() {
+  local pid
+  pid=$(listener_pid)
+  if [ -n "$pid" ]; then
+    if is_ours "$pid"; then
+      printf 'Läuft bereits, Prozess %s, http://%s:%s\n' "$pid" "$BIND" "$PORT"
+      exit 0
+    fi
+    die "Port $PORT ist belegt, aber nicht von der Praxis."
+  fi
+  cd "$APP"
+  exec "$RUBY" server.rb
+}
+
+# Sends TERM and waits. Does not use KILL. Refuses to signal a process that is not server.rb.
+cmd_stop() {
+  local pid i
+  pid=$(listener_pid)
+  if [ -z "$pid" ]; then
+    printf 'Ist schon gestoppt.\n'
+    return 0
+  fi
+  if ! is_ours "$pid"; then
+    die "Port $PORT gehört einem anderen Programm, Prozess $pid."
+  fi
+  kill "$pid"
+  i=0
+  while [ "$i" -lt 50 ]; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      printf 'Gestoppt.\n'
+      return 0
+    fi
+    sleep 0.2
+    i=$((i + 1))
+  done
+  die "Der Server, Prozess $pid, hat nicht aufgehört."
+}
+
+# Writes a checked copy under sicherungen/. A copy that fails the check is deleted.
+cmd_backup() {
+  local dest
+  [ -f "$DB" ] || die "Keine Datenbank: $DB"
+  mkdir -p "$BACKUP_DIR"
+  dest="$BACKUP_DIR/praxis-$(stamp).db"
+  if ! copy_db "$DB" "$dest" || ! integrity_report "$dest"; then
+    rm -f "$dest" "$dest-wal" "$dest-shm"
+    die "Die Sicherung ist unvollständig und wurde verworfen."
+  fi
+  rm -f "$dest-wal" "$dest-shm"
+  chmod 644 "$dest"
+  printf '%s\n' "$dest"
+}
+
+# Checks the live database file. The server may keep running.
+cmd_check() {
+  local bytes
+  [ -f "$DB" ] || die "Keine Datenbank: $DB"
+  if ! bytes=$(stat -c %s "$DB" 2>/dev/null); then
+    bytes=$(stat -f %z "$DB")
+  fi
+  if ! integrity_report "$DB"; then
+    die "Die Prüfung ist fehlgeschlagen."
+  fi
+  printf 'Datei: %s\n' "$DB"
+  printf 'Größe: %s Byte\n' "$bytes"
+  printf 'Integrität: ok\n'
+  printf 'Fremdschlüssel: ok\n'
+}
+
+# Asks for the word ja. Stops the server, copies the current file aside, then replaces it.
+# Does not start the server again. On failure the safety copy is put back.
+cmd_restore() {
+  local src safety pid
+  [ $# -eq 1 ] || die "Aufruf: praxis restore DATEI"
+  src=$(abs_path "$1") || die "Sicherung nicht gefunden: $1"
+  [ "$src" != "$DB" ] || die "Die Sicherung und die Akte sind dieselbe Datei."
+  if ! integrity_report "$src"; then
+    die "Diese Sicherung ist beschädigt. Die Akte bleibt unverändert."
+  fi
+  printf 'Die laufende Akte wird ersetzt.\n'
+  printf '  Akte:   %s\n' "$DB"
+  printf '  Quelle: %s\n' "$src"
+  printf '  Vorher wird der jetzige Stand nach %s gesichert.\n' "$BACKUP_DIR"
+  printf 'Zum Fortfahren ja eingeben: '
+  read -r answer
+  [ "$answer" = "ja" ] || die "Abgebrochen."
+  pid=$(listener_pid)
+  if [ -n "$pid" ]; then
+    cmd_stop
+  fi
+  mkdir -p "$BACKUP_DIR"
+  if [ -f "$DB" ]; then
+    safety="$BACKUP_DIR/praxis-vor-wiederherstellung-$(stamp).db"
+    copy_db "$DB" "$safety"
+    if ! integrity_report "$safety"; then
+      rm -f "$safety"
+      die "Der jetzige Stand ließ sich nicht sichern. Die Akte bleibt unverändert."
+    fi
+    chmod 644 "$safety"
+    printf 'Jetziger Stand: %s\n' "$safety"
+  fi
+  rm -f "$DB" "$DB-wal" "$DB-shm"
+  if ! copy_db "$src" "$DB" || ! integrity_report "$DB"; then
+    rm -f "$DB" "$DB-wal" "$DB-shm"
+    if [ -n "${safety:-}" ] && [ -f "$safety" ]; then
+      copy_db "$safety" "$DB" || true
+    fi
+    die "Die Wiederherstellung ist fehlgeschlagen. Der vorige Stand wurde zurückgelegt, falls eine Sicherung vorlag."
+  fi
+  chmod 644 "$DB"
+  printf 'Wiederhergestellt aus %s\n' "$src"
+  printf 'Der Server ist gestoppt. Start mit: %s/praxis start\n' "$APP"
+}
+
+# The workstation's server address. An empty file means this computer.
+ziel_file() {
+  printf '%s\n' "${PRAXIS_ZIEL_FILE:-$HOME/.config/praxis/ziel}"
+}
+
+read_ziel() {
+  local file line
+  file=$(ziel_file)
+  if [ -f "$file" ]; then
+    line=$(tr -d '[:space:]' < "$file" || true)
+    if [ -n "$line" ]; then
+      printf '%s\n' "$line"
+      return
+    fi
+  fi
+  printf 'http://127.0.0.1:%s\n' "$PORT"
+}
+
+valid_ziel() {
+  printf '%s' "$1" | grep -Eq '^https?://[A-Za-z0-9._-]+(:[0-9]{1,5})?/?$'
+}
+
+# Shows or stores where this workstation finds the server. The file is not the database.
+cmd_ziel() {
+  local file url
+  file=$(ziel_file)
+  mkdir -p "$(dirname "$file")"
+  if [ $# -eq 0 ]; then
+    read_ziel
+    printf '\n'
+    return
+  fi
+  url=${1%/}
+  valid_ziel "$url" || die "Die Adresse beginnt mit http:// oder https:// und nennt den Rechner, optional den Port."
+  printf '%s\n' "$url" > "$file"
+  printf 'Server: %s\n' "$url"
+}
+
+local_listener() {
+  lsof -nP -t -iTCP:"$LOKAL_PORT" -sTCP:LISTEN 2>/dev/null | head -1 || true
+}
+
+# Starts the workstation opener in the background when it is not already listening.
+start_lokal() {
+  local i
+  if [ -n "$(local_listener)" ]; then
+    return 0
+  fi
+  mkdir -p "${HOME}/.cache/praxis" "$(dirname "$(ziel_file)")"
+  setsid "$RUBY" "$APP/lokal.rb" >>"${HOME}/.cache/praxis/lokal.log" 2>&1 </dev/null &
+  i=0
+  while [ "$i" -lt 30 ]; do
+    if [ -n "$(local_listener)" ]; then
+      return 0
+    fi
+    i=$((i + 1))
+    sleep 0.1
+  done
+  die "praxis lokal ist nicht gestartet."
+}
+
+# True when the configured server is this computer.
+loopback_ziel() {
+  case "$1" in
+    http://127.0.0.1|http://127.0.0.1:*|http://localhost|http://localhost:*)
+      return 0 ;;
+  esac
+  return 1
+}
+
+# Starts the server in the background only when this workstation uses it and the port is free.
+# Opens Chrome in app mode with its own profile under ~/.config/praxis-fenster, so the normal Chrome profile is untouched.
+# Files open through praxis lokal on this computer.
+cmd_fenster() {
+  local pid i chrome ziel
+  ziel=$(read_ziel)
+  start_lokal
+  if loopback_ziel "$ziel"; then
+    pid=$(listener_pid)
+    if [ -z "$pid" ]; then
+      cd "$APP"
+      setsid "$RUBY" server.rb >>"$ROOT/data/server.log" 2>&1 </dev/null &
+      i=0
+      while [ "$i" -lt 50 ]; do
+        pid=$(listener_pid)
+        if [ -n "$pid" ]; then
+          break
+        fi
+        i=$((i + 1))
+        sleep 0.1
+      done
+      if [ -z "$(listener_pid)" ]; then
+        die "Der Server ist nicht gestartet."
+      fi
+    fi
+  fi
+  if [ -x /opt/google/chrome/chrome ]; then
+    chrome=/opt/google/chrome/chrome
+  elif command -v google-chrome >/dev/null 2>&1; then
+    chrome=$(command -v google-chrome)
+  elif [ -x /usr/bin/chromium ]; then
+    chrome=/usr/bin/chromium
+  elif command -v chromium >/dev/null 2>&1; then
+    chrome=$(command -v chromium)
+  elif [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+    chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  elif [ -x "/Applications/Chromium.app/Contents/MacOS/Chromium" ]; then
+    chrome="/Applications/Chromium.app/Contents/MacOS/Chromium"
+  else
+    die "Chrome oder Chromium fehlt."
+  fi
+  exec "$chrome" \
+    --app="${ziel}/" \
+    --start-maximized \
+    --class=Praxis \
+    --user-data-dir="${HOME}/.config/praxis-fenster" \
+    --no-first-run \
+    --no-default-browser-check
+}
+
+# Runs the workstation opener in this window. Ctrl+C stops it.
+cmd_lokal() {
+  exec "$RUBY" "$APP/lokal.rb"
+}
+
+# Packs the program without the chart, practice data, letters, files, backups,
+# the ICD import, the translation, the bundled OCR, or the local move note.
+cmd_paket() {
+  local dest name
+  dest="${PRAXIS_PAKET_DIR:-$HOME/praxis-paket}"
+  mkdir -p "$dest"
+  name="$dest/praxis-$(date +%Y-%m-%d).tar.gz"
+  tar -C "$(dirname "$APP")" -czf "$name" \
+    --exclude='praxis/data' \
+    --exclude='praxis/dateien' \
+    --exclude='praxis/briefe' \
+    --exclude='praxis/sicherungen' \
+    --exclude='praxis/kuerzel/eigene.json' \
+    --exclude='praxis/parameter/eigene.json' \
+    --exclude='praxis/import' \
+    --exclude='praxis/uebersetzung' \
+    --exclude='praxis/ocr' \
+    --exclude='praxis/WEITER.txt' \
+    "$(basename "$APP")"
+  printf '%s\n' "$name"
+}
+
+# Prints the command list.
+usage() {
+  cat <<EOF
+Aufruf: $APP/praxis BEFEHL
+
+  start              Server starten. Ctrl+C stoppt ihn in diesem Fenster.
+  fenster            Praxis ohne Tableiste und Adresszeile öffnen.
+  lokal              Dateien auf diesem Rechner öffnen. Ctrl+C stoppt ihn.
+  ziel               Zeigt, wo dieser Rechner den Server sucht.
+  ziel ADRESSE       Merkt sich diese Serveradresse, zum Beispiel http://192.168.1.20:8765
+  stop               Server geordnet beenden.
+  backup             Konsistente Sicherung nach $BACKUP_DIR
+  restore DATEI      Akte durch eine geprüfte Sicherung ersetzen.
+  check              Integrität und Fremdschlüssel prüfen.
+  paket              Programm packen, ohne Akte, Briefe, Dateien und Unterschrift.
+  install            Fehlende Programme auf Linux oder einem Mac einrichten.
+EOF
+}
+
+# Installs the programs this computer still lacks. The chart is not touched.
+cmd_install() {
+  exec "$APP/install.sh" "$@"
+}
+
+case "${1:-}" in
+  start) cmd_start ;;
+  fenster) cmd_fenster ;;
+  lokal) cmd_lokal ;;
+  ziel) shift; cmd_ziel "$@" ;;
+  stop) cmd_stop ;;
+  backup) cmd_backup ;;
+  restore) shift; cmd_restore "$@" ;;
+  check) cmd_check ;;
+  paket) cmd_paket ;;
+  install) shift; cmd_install "$@" ;;
+  *) usage; exit 1 ;;
+esac

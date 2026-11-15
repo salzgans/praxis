@@ -1,0 +1,1870 @@
+{
+  "name": "Standard",
+  "_hinweis": "Jede JSON-Datei in diesem Ordner ergänzt die Parameter. eigene.json ist für Zuordnungen aus der Praxis und wird vom Programm fortgeschrieben. Alias ist ein anderer Name desselben Parameters. Umrechnung: Ziel = Wert * faktor + offset, in die hier genannte Einheit. Gleiche Einheiten brauchen keinen Faktor. Ein großgeschriebener Code wie LIPASE bleibt eine eigene Zeile, wenn der Zahlenmaßstab nicht derselbe ist.",
+  "gruppen": [
+    {
+      "id": "blutbild",
+      "name": "Blutbild",
+      "ordnung": 10
+    },
+    {
+      "id": "gerinnung",
+      "name": "Gerinnung",
+      "ordnung": 20
+    },
+    {
+      "id": "klinische_chemie",
+      "name": "Klinische Chemie",
+      "ordnung": 30
+    },
+    {
+      "id": "hormone",
+      "name": "Hormone",
+      "ordnung": 40
+    },
+    {
+      "id": "vitamine",
+      "name": "Vitamine und Spurenelemente",
+      "ordnung": 50
+    },
+    {
+      "id": "tumormarker",
+      "name": "Tumormarker",
+      "ordnung": 60
+    },
+    {
+      "id": "immunologie",
+      "name": "Immunologische Befunde",
+      "ordnung": 70
+    },
+    {
+      "id": "serologie",
+      "name": "Bakteriologische und serologische Befunde",
+      "ordnung": 80
+    },
+    {
+      "id": "urin",
+      "name": "Urin und Funktion",
+      "ordnung": 90
+    }
+  ],
+  "parameter": [
+    {
+      "id": "haemoglobin",
+      "name": "Hämoglobin",
+      "gruppe": "blutbild",
+      "einheit": "g/dl",
+      "ordnung": 10,
+      "alias": [
+        "Hämoglobin",
+        "Haemoglobin",
+        "Hamoglobin",
+        "Hb",
+        "HB",
+        "HGB"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 1.611
+        },
+        {
+          "von": "g/l",
+          "faktor": 0.1
+        }
+      ]
+    },
+    {
+      "id": "haematokrit",
+      "name": "Hämatokrit",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 20,
+      "alias": [
+        "Hämatokrit",
+        "Haematokrit",
+        "HKT",
+        "HCT",
+        "Hk"
+      ],
+      "gleiche": [
+        "Vol%",
+        "vol%"
+      ],
+      "umrechnung": [
+        {
+          "von": "l/l",
+          "faktor": 100
+        }
+      ]
+    },
+    {
+      "id": "erythrozyten",
+      "name": "Erythrozyten",
+      "gruppe": "blutbild",
+      "einheit": "c/pl",
+      "ordnung": 30,
+      "alias": [
+        "Erythrozyten",
+        "ERY",
+        "RBC"
+      ],
+      "gleiche": [
+        "T/l",
+        "/pl",
+        "10^12/l",
+        "Mio/µl"
+      ]
+    },
+    {
+      "id": "mcv",
+      "name": "MCV",
+      "gruppe": "blutbild",
+      "einheit": "fl",
+      "ordnung": 40,
+      "alias": [
+        "MCV"
+      ],
+      "gleiche": [
+        "µm3",
+        "um3"
+      ]
+    },
+    {
+      "id": "mch",
+      "name": "MCH",
+      "gruppe": "blutbild",
+      "einheit": "pg",
+      "ordnung": 50,
+      "alias": [
+        "MCH"
+      ]
+    },
+    {
+      "id": "mchc",
+      "name": "MCHC",
+      "gruppe": "blutbild",
+      "einheit": "g/dl",
+      "ordnung": 60,
+      "alias": [
+        "MCHC"
+      ],
+      "umrechnung": [
+        {
+          "von": "g/l",
+          "faktor": 0.1
+        }
+      ]
+    },
+    {
+      "id": "ery_hypo",
+      "name": "Hypochrome Erythrozyten",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 70,
+      "alias": [
+        "Hypochrome Erythrozyten",
+        "ERYHYP"
+      ]
+    },
+    {
+      "id": "leukozyten",
+      "name": "Leukozyten",
+      "gruppe": "blutbild",
+      "einheit": "c/nl",
+      "ordnung": 80,
+      "alias": [
+        "Leukozyten",
+        "LEUK",
+        "LEUKO",
+        "WBC",
+        "Leukos"
+      ],
+      "gleiche": [
+        "G/l",
+        "/nl",
+        "10^9/l",
+        "Gpt/l"
+      ],
+      "umrechnung": [
+        {
+          "von": "/µl",
+          "faktor": 0.001
+        },
+        {
+          "von": "c/µl",
+          "faktor": 0.001
+        },
+        {
+          "von": "/ul",
+          "faktor": 0.001
+        }
+      ]
+    },
+    {
+      "id": "thrombozyten",
+      "name": "Thrombozyten",
+      "gruppe": "blutbild",
+      "einheit": "c/nl",
+      "ordnung": 90,
+      "alias": [
+        "Thrombozyten",
+        "TROM",
+        "THROMB",
+        "PLT"
+      ],
+      "gleiche": [
+        "G/l",
+        "/nl"
+      ],
+      "umrechnung": [
+        {
+          "von": "/µl",
+          "faktor": 0.001
+        },
+        {
+          "von": "c/µl",
+          "faktor": 0.001
+        }
+      ]
+    },
+    {
+      "id": "neutrophile",
+      "name": "Neutrophile",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 100,
+      "alias": [
+        "Neutrophile",
+        "NEUT",
+        "NEUTRO"
+      ]
+    },
+    {
+      "id": "lymphozyten",
+      "name": "Lymphozyten",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 110,
+      "alias": [
+        "Lymphozyten",
+        "-Lymphozyten",
+        "LYMP",
+        "LYMPHO"
+      ]
+    },
+    {
+      "id": "monozyten",
+      "name": "Monozyten",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 120,
+      "alias": [
+        "Monozyten",
+        "-Monozyten",
+        "MONO"
+      ]
+    },
+    {
+      "id": "eosinophile",
+      "name": "Eosinophile",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 130,
+      "alias": [
+        "Eosinophile",
+        "-Eosinophile",
+        "EOS"
+      ]
+    },
+    {
+      "id": "basophile",
+      "name": "Basophile",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 140,
+      "alias": [
+        "Basophile",
+        "-Basophile",
+        "BASO",
+        "BASOPH"
+      ]
+    },
+    {
+      "id": "stab",
+      "name": "Stabkernige",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 150,
+      "alias": [
+        "Stabkernige",
+        "STAB"
+      ]
+    },
+    {
+      "id": "segm",
+      "name": "Segmentkernige",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 160,
+      "alias": [
+        "Segmentkernige",
+        "SEGM"
+      ]
+    },
+    {
+      "id": "luc",
+      "name": "LUC",
+      "gruppe": "blutbild",
+      "einheit": "%",
+      "ordnung": 170,
+      "alias": [
+        "LUC"
+      ]
+    },
+    {
+      "id": "neutro_abs",
+      "name": "Neutrophile absolut",
+      "gruppe": "blutbild",
+      "einheit": "c/µl",
+      "ordnung": 180,
+      "alias": [
+        "Neutrophile abs.",
+        "NEUTA"
+      ]
+    },
+    {
+      "id": "lympho_abs",
+      "name": "Lymphozyten absolut",
+      "gruppe": "blutbild",
+      "einheit": "c/µl",
+      "ordnung": 190,
+      "alias": [
+        "Lymphozyten abs.",
+        "LYMPA"
+      ]
+    },
+    {
+      "id": "mono_abs",
+      "name": "Monozyten absolut",
+      "gruppe": "blutbild",
+      "einheit": "c/µl",
+      "ordnung": 200,
+      "alias": [
+        "Monozyten abs.",
+        "MONOA"
+      ]
+    },
+    {
+      "id": "eos_abs",
+      "name": "Eosinophile absolut",
+      "gruppe": "blutbild",
+      "einheit": "c/µl",
+      "ordnung": 210,
+      "alias": [
+        "Eosinophile abs.",
+        "EOSA"
+      ]
+    },
+    {
+      "id": "baso_abs",
+      "name": "Basophile absolut",
+      "gruppe": "blutbild",
+      "einheit": "c/µl",
+      "ordnung": 220,
+      "alias": [
+        "Basophile abs.",
+        "BASOA"
+      ]
+    },
+    {
+      "id": "stab_abs",
+      "name": "Stabkernige absolut",
+      "gruppe": "blutbild",
+      "einheit": "c/µl",
+      "ordnung": 230,
+      "alias": [
+        "Stabkernige abs.",
+        "STABA"
+      ]
+    },
+    {
+      "id": "segm_abs",
+      "name": "Segmentkernige absolut",
+      "gruppe": "blutbild",
+      "einheit": "c/µl",
+      "ordnung": 240,
+      "alias": [
+        "Segmentkern.abs.",
+        "SEGMA"
+      ]
+    },
+    {
+      "id": "luc_abs",
+      "name": "LUC absolut",
+      "gruppe": "blutbild",
+      "einheit": "c/µl",
+      "ordnung": 250,
+      "alias": [
+        "LUC abs.",
+        "LUCA"
+      ]
+    },
+    {
+      "id": "bsg",
+      "name": "Blutsenkung",
+      "gruppe": "blutbild",
+      "einheit": "mm",
+      "ordnung": 260,
+      "alias": [
+        "Blutsenkung",
+        "BSG",
+        "BSG 1h"
+      ],
+      "gleiche": [
+        "mm/h"
+      ]
+    },
+    {
+      "id": "kleines_bb",
+      "name": "Kleines Blutbild",
+      "gruppe": "blutbild",
+      "einheit": "",
+      "ordnung": 270,
+      "alias": [
+        "Kleines Blutbild (EDTA)",
+        "Kleines Blutbild",
+        "BBT"
+      ]
+    },
+    {
+      "id": "quick",
+      "name": "Quick",
+      "gruppe": "gerinnung",
+      "einheit": "%",
+      "ordnung": 10,
+      "alias": [
+        "Quick",
+        "Quick unter Marcumar",
+        "QUICK",
+        "QUIC"
+      ]
+    },
+    {
+      "id": "inr",
+      "name": "INR",
+      "gruppe": "gerinnung",
+      "einheit": "Ratio",
+      "ordnung": 20,
+      "alias": [
+        "INR",
+        "INR unter Marcumar",
+        "QUINR",
+        "QUINRG"
+      ],
+      "gleiche": [
+        "keine"
+      ]
+    },
+    {
+      "id": "aptt",
+      "name": "aPTT",
+      "gruppe": "gerinnung",
+      "einheit": "s",
+      "ordnung": 30,
+      "alias": [
+        "aPTT",
+        "PTT",
+        "PTTGR"
+      ],
+      "gleiche": [
+        "sec",
+        "sec.",
+        "Sek"
+      ]
+    },
+    {
+      "id": "fibrinogen",
+      "name": "Fibrinogen",
+      "gruppe": "gerinnung",
+      "einheit": "mg/dl",
+      "ordnung": 40,
+      "alias": [
+        "Fibrinogen",
+        "Fibrinogen (funktion. n. Claus",
+        "FIBC"
+      ],
+      "umrechnung": [
+        {
+          "von": "g/l",
+          "faktor": 100
+        }
+      ]
+    },
+    {
+      "id": "proteinc",
+      "name": "Protein C",
+      "gruppe": "gerinnung",
+      "einheit": "%",
+      "ordnung": 50,
+      "alias": [
+        "Protein C Aktivität",
+        "Protein C",
+        "PRC"
+      ]
+    },
+    {
+      "id": "proteins",
+      "name": "Protein S frei",
+      "gruppe": "gerinnung",
+      "einheit": "%",
+      "ordnung": 60,
+      "alias": [
+        "Protein S Antigen (frei)",
+        "Protein S frei",
+        "PRSFI"
+      ]
+    },
+    {
+      "id": "apc",
+      "name": "APC-Resistenz",
+      "gruppe": "gerinnung",
+      "einheit": "Ratio",
+      "ordnung": 70,
+      "alias": [
+        "APC-Resistenz",
+        "IMAPCR"
+      ]
+    },
+    {
+      "id": "natrium",
+      "name": "Natrium",
+      "gruppe": "klinische_chemie",
+      "einheit": "mmol/l",
+      "ordnung": 10,
+      "alias": [
+        "Natrium",
+        "NA",
+        "Na"
+      ]
+    },
+    {
+      "id": "kalium",
+      "name": "Kalium",
+      "gruppe": "klinische_chemie",
+      "einheit": "mmol/l",
+      "ordnung": 20,
+      "alias": [
+        "Kalium",
+        "K"
+      ]
+    },
+    {
+      "id": "chlorid",
+      "name": "Chlorid",
+      "gruppe": "klinische_chemie",
+      "einheit": "mmol/l",
+      "ordnung": 30,
+      "alias": [
+        "Chlorid",
+        "CL",
+        "CHLORS"
+      ]
+    },
+    {
+      "id": "calcium",
+      "name": "Calcium",
+      "gruppe": "klinische_chemie",
+      "einheit": "mmol/l",
+      "ordnung": 40,
+      "alias": [
+        "Calcium",
+        "CA",
+        "Ca"
+      ],
+      "umrechnung": [
+        {
+          "von": "mg/dl",
+          "faktor": 0.2495
+        }
+      ]
+    },
+    {
+      "id": "phosphat",
+      "name": "Phosphat",
+      "gruppe": "klinische_chemie",
+      "einheit": "mmol/l",
+      "ordnung": 50,
+      "alias": [
+        "Phosphat",
+        "Phosphat anorganisch",
+        "A.PH"
+      ],
+      "umrechnung": [
+        {
+          "von": "mg/dl",
+          "faktor": 0.323
+        }
+      ]
+    },
+    {
+      "id": "glucose",
+      "name": "Glucose",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 60,
+      "alias": [
+        "Glucose",
+        "Glucose (SE)",
+        "Glukose",
+        "BZ",
+        "GLUK"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 18.02
+        },
+        {
+          "von": "g/l",
+          "faktor": 100
+        }
+      ]
+    },
+    {
+      "id": "glucose_nue",
+      "name": "Glucose nüchtern",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 70,
+      "alias": [
+        "Glucose nüchtern",
+        "Glucose nüchtern (NaF)",
+        "Glukose nüchtern",
+        "BZN"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 18.02
+        }
+      ]
+    },
+    {
+      "id": "hba1c",
+      "name": "HbA1c",
+      "gruppe": "klinische_chemie",
+      "einheit": "%",
+      "ordnung": 80,
+      "alias": [
+        "HbA1c",
+        "HbA1c immunol. (EDTA)",
+        "HBA1C"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/mol",
+          "faktor": 0.0915,
+          "offset": 2.15
+        }
+      ]
+    },
+    {
+      "id": "hba1c_ifcc",
+      "name": "HbA1c IFCC",
+      "gruppe": "klinische_chemie",
+      "einheit": "%",
+      "ordnung": 90,
+      "alias": [
+        "HbA1c IFCC",
+        "HbA1c IFCC (int. Standard)",
+        "HBA1CI"
+      ]
+    },
+    {
+      "id": "kreatinin",
+      "name": "Kreatinin",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 100,
+      "alias": [
+        "Kreatinin",
+        "KREA",
+        "Crea"
+      ],
+      "umrechnung": [
+        {
+          "von": "µmol/l",
+          "faktor": 0.0113
+        },
+        {
+          "von": "umol/l",
+          "faktor": 0.0113
+        }
+      ]
+    },
+    {
+      "id": "harnstoff",
+      "name": "Harnstoff",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 110,
+      "alias": [
+        "Harnstoff",
+        "HST",
+        "HAST"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 6.006
+        }
+      ]
+    },
+    {
+      "id": "harnsaeure",
+      "name": "Harnsäure",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 120,
+      "alias": [
+        "Harnsäure",
+        "HSR",
+        "HSÄU2"
+      ],
+      "umrechnung": [
+        {
+          "von": "µmol/l",
+          "faktor": 0.0168
+        },
+        {
+          "von": "umol/l",
+          "faktor": 0.0168
+        }
+      ]
+    },
+    {
+      "id": "bilirubin",
+      "name": "Bilirubin gesamt",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 130,
+      "alias": [
+        "Bilirubin gesamt",
+        "Bilirubin",
+        "BILG"
+      ],
+      "umrechnung": [
+        {
+          "von": "µmol/l",
+          "faktor": 0.0585
+        },
+        {
+          "von": "umol/l",
+          "faktor": 0.0585
+        }
+      ]
+    },
+    {
+      "id": "bilirubin_ind",
+      "name": "Bilirubin unkonjugiert",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 140,
+      "alias": [
+        "Bilirubin unkonjugiert",
+        "BILI"
+      ],
+      "umrechnung": [
+        {
+          "von": "µmol/l",
+          "faktor": 0.0585
+        }
+      ]
+    },
+    {
+      "id": "got",
+      "name": "GOT",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 150,
+      "alias": [
+        "GOT",
+        "AST",
+        "GOT37"
+      ]
+    },
+    {
+      "id": "gpt",
+      "name": "GPT",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 160,
+      "alias": [
+        "GPT",
+        "ALT"
+      ]
+    },
+    {
+      "id": "gpt37",
+      "name": "GPT37",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 170,
+      "alias": [
+        "GPT37"
+      ]
+    },
+    {
+      "id": "ggt",
+      "name": "Gamma-GT",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 180,
+      "alias": [
+        "Gamma-GT",
+        "GGT",
+        "Y-GT",
+        "g-GT",
+        "GGT37"
+      ]
+    },
+    {
+      "id": "ap",
+      "name": "Alkalische Phosphatase",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 190,
+      "alias": [
+        "Alkalische Phosphatase",
+        "Alkalische Phosphatase ges.",
+        "AP",
+        "AP37"
+      ]
+    },
+    {
+      "id": "ck",
+      "name": "CK",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 200,
+      "alias": [
+        "CK",
+        "CK (gesamt)",
+        "CK37"
+      ]
+    },
+    {
+      "id": "ckmb",
+      "name": "CK-MB",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 210,
+      "alias": [
+        "CK-MB",
+        "CKMB"
+      ]
+    },
+    {
+      "id": "ldh",
+      "name": "LDH",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 220,
+      "alias": [
+        "LDH",
+        "LDH37"
+      ]
+    },
+    {
+      "id": "hbdh",
+      "name": "HBDH",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 230,
+      "alias": [
+        "HBDH",
+        "a-HBDH"
+      ]
+    },
+    {
+      "id": "lipase",
+      "name": "Lipase",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 240,
+      "alias": [
+        "Lipase",
+        "LIP"
+      ]
+    },
+    {
+      "id": "lipase_code",
+      "name": "LIPASE",
+      "gruppe": "klinische_chemie",
+      "einheit": "",
+      "ordnung": 250,
+      "alias": [
+        "LIPASE"
+      ]
+    },
+    {
+      "id": "amylase",
+      "name": "Amylase",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 260,
+      "alias": [
+        "Amylase",
+        "a-Amylase im Serum",
+        "AMYS",
+        "AMYL/S"
+      ]
+    },
+    {
+      "id": "che",
+      "name": "Cholinesterase",
+      "gruppe": "klinische_chemie",
+      "einheit": "U/l",
+      "ordnung": 270,
+      "alias": [
+        "Cholinesterase",
+        "CHE"
+      ]
+    },
+    {
+      "id": "che37",
+      "name": "CHE37",
+      "gruppe": "klinische_chemie",
+      "einheit": "",
+      "ordnung": 280,
+      "alias": [
+        "CHE37"
+      ]
+    },
+    {
+      "id": "crp",
+      "name": "CRP",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/l",
+      "ordnung": 290,
+      "alias": [
+        "CRP",
+        "CRP supersensitiv",
+        "C-reaktives Protein"
+      ],
+      "umrechnung": [
+        {
+          "von": "mg/dl",
+          "faktor": 10
+        }
+      ]
+    },
+    {
+      "id": "eiweiss",
+      "name": "Gesamteiweiß",
+      "gruppe": "klinische_chemie",
+      "einheit": "g/l",
+      "ordnung": 300,
+      "alias": [
+        "Gesamteiweiß",
+        "G-EW",
+        "GES-E",
+        "Gesamteiweiss"
+      ]
+    },
+    {
+      "id": "albumin_rel",
+      "name": "Albumin (Elektrophorese)",
+      "gruppe": "klinische_chemie",
+      "einheit": "%",
+      "ordnung": 310,
+      "alias": [
+        "Albumin",
+        "ALBUM",
+        "ALB."
+      ]
+    },
+    {
+      "id": "albumin_abs",
+      "name": "Albumin absolut",
+      "gruppe": "klinische_chemie",
+      "einheit": "g/l",
+      "ordnung": 320,
+      "alias": [
+        "Albumin abs.",
+        "Albumin photometrisch",
+        "ALBUMA",
+        "ALBPH"
+      ]
+    },
+    {
+      "id": "a1",
+      "name": "a1-Globulin",
+      "gruppe": "klinische_chemie",
+      "einheit": "%",
+      "ordnung": 330,
+      "alias": [
+        "a1-Globulin",
+        "A-1",
+        "ALPHA1"
+      ]
+    },
+    {
+      "id": "a1abs",
+      "name": "a1-Globulin absolut",
+      "gruppe": "klinische_chemie",
+      "einheit": "g/l",
+      "ordnung": 340,
+      "alias": [
+        "a1-Globulin abs.",
+        "AL1A"
+      ]
+    },
+    {
+      "id": "a2",
+      "name": "a2-Globulin",
+      "gruppe": "klinische_chemie",
+      "einheit": "%",
+      "ordnung": 350,
+      "alias": [
+        "a2-Globulin",
+        "A-2",
+        "ALPHA2"
+      ]
+    },
+    {
+      "id": "a2abs",
+      "name": "a2-Globulin absolut",
+      "gruppe": "klinische_chemie",
+      "einheit": "g/l",
+      "ordnung": 360,
+      "alias": [
+        "a2-Globulin abs.",
+        "AL2A"
+      ]
+    },
+    {
+      "id": "beta",
+      "name": "beta-Globulin",
+      "gruppe": "klinische_chemie",
+      "einheit": "%",
+      "ordnung": 370,
+      "alias": [
+        "beta-Globulin",
+        "BETA"
+      ]
+    },
+    {
+      "id": "betaabs",
+      "name": "beta-Globulin absolut",
+      "gruppe": "klinische_chemie",
+      "einheit": "g/l",
+      "ordnung": 380,
+      "alias": [
+        "beta-Globulin abs.",
+        "BETAA"
+      ]
+    },
+    {
+      "id": "gamma",
+      "name": "gamma-Globulin",
+      "gruppe": "klinische_chemie",
+      "einheit": "%",
+      "ordnung": 390,
+      "alias": [
+        "gamma-Globulin",
+        "GAMMA"
+      ]
+    },
+    {
+      "id": "gammaabs",
+      "name": "gamma-Globulin absolut",
+      "gruppe": "klinische_chemie",
+      "einheit": "g/l",
+      "ordnung": 400,
+      "alias": [
+        "gamma-Globulin abs.",
+        "GAMMAA"
+      ]
+    },
+    {
+      "id": "ep",
+      "name": "Elektrophorese",
+      "gruppe": "klinische_chemie",
+      "einheit": "",
+      "ordnung": 410,
+      "alias": [
+        "Elektrophorese",
+        "EPHO"
+      ]
+    },
+    {
+      "id": "cholesterin",
+      "name": "Cholesterin",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 420,
+      "alias": [
+        "Cholesterin",
+        "CHOL"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 38.67
+        }
+      ]
+    },
+    {
+      "id": "hdl",
+      "name": "HDL-Cholesterin",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 430,
+      "alias": [
+        "HDL-Cholesterin",
+        "HDL",
+        "HDL2"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 38.67
+        }
+      ]
+    },
+    {
+      "id": "ldl",
+      "name": "LDL-Cholesterin",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 440,
+      "alias": [
+        "LDL-Cholesterin",
+        "LDL-Cholesterin Bestimmung",
+        "LDL"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 38.67
+        }
+      ]
+    },
+    {
+      "id": "nonhdl",
+      "name": "Non-HDL-Cholesterin",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 450,
+      "alias": [
+        "Non-HDL-Cholesterin",
+        "NONHDL"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 38.67
+        }
+      ]
+    },
+    {
+      "id": "triglyceride",
+      "name": "Triglyceride",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 460,
+      "alias": [
+        "Triglyceride",
+        "TRIG",
+        "TRI"
+      ],
+      "umrechnung": [
+        {
+          "von": "mmol/l",
+          "faktor": 88.57
+        }
+      ]
+    },
+    {
+      "id": "lpa",
+      "name": "Lipoprotein (a)",
+      "gruppe": "klinische_chemie",
+      "einheit": "nmol/l",
+      "ordnung": 470,
+      "alias": [
+        "Lipoprotein (a)",
+        "LPA"
+      ],
+      "gleiche": [
+        "nMol/l"
+      ]
+    },
+    {
+      "id": "chol_hdl",
+      "name": "Risikofaktor Cholesterin/HDL",
+      "gruppe": "klinische_chemie",
+      "einheit": "",
+      "ordnung": 480,
+      "alias": [
+        "Risikofaktor Cholesterin/HDL",
+        "CHOLHD"
+      ],
+      "gleiche": [
+        "keine"
+      ]
+    },
+    {
+      "id": "eisen",
+      "name": "Eisen",
+      "gruppe": "klinische_chemie",
+      "einheit": "µmol/l",
+      "ordnung": 490,
+      "alias": [
+        "Eisen",
+        "FE"
+      ],
+      "umrechnung": [
+        {
+          "von": "µg/dl",
+          "faktor": 0.179
+        },
+        {
+          "von": "ug/dl",
+          "faktor": 0.179
+        }
+      ]
+    },
+    {
+      "id": "ferritin",
+      "name": "Ferritin",
+      "gruppe": "klinische_chemie",
+      "einheit": "ng/ml",
+      "ordnung": 500,
+      "alias": [
+        "Ferritin",
+        "FERR"
+      ],
+      "gleiche": [
+        "µg/l",
+        "ug/l"
+      ]
+    },
+    {
+      "id": "transferrin",
+      "name": "Transferrin",
+      "gruppe": "klinische_chemie",
+      "einheit": "mg/dl",
+      "ordnung": 510,
+      "alias": [
+        "Transferrin",
+        "TRFE"
+      ],
+      "umrechnung": [
+        {
+          "von": "g/l",
+          "faktor": 100
+        }
+      ]
+    },
+    {
+      "id": "tf_sat",
+      "name": "Transferrinsättigung",
+      "gruppe": "klinische_chemie",
+      "einheit": "%",
+      "ordnung": 520,
+      "alias": [
+        "Transferrinsättigung",
+        "TRFESG"
+      ]
+    },
+    {
+      "id": "bnp",
+      "name": "NT-pro-BNP",
+      "gruppe": "klinische_chemie",
+      "einheit": "pg/ml",
+      "ordnung": 530,
+      "alias": [
+        "NT-pro-BNP",
+        "BNP"
+      ]
+    },
+    {
+      "id": "tsh",
+      "name": "TSH",
+      "gruppe": "hormone",
+      "einheit": "µU/ml",
+      "ordnung": 10,
+      "alias": [
+        "TSH",
+        "TSH-basal",
+        "TSH basal",
+        "TSH1"
+      ],
+      "gleiche": [
+        "uU/ml",
+        "mU/l"
+      ]
+    },
+    {
+      "id": "ft3",
+      "name": "freies T3",
+      "gruppe": "hormone",
+      "einheit": "ng/l",
+      "ordnung": 20,
+      "alias": [
+        "freies T3",
+        "fT3",
+        "FT3"
+      ],
+      "gleiche": [
+        "pg/ml"
+      ],
+      "umrechnung": [
+        {
+          "von": "pmol/l",
+          "faktor": 0.651
+        }
+      ]
+    },
+    {
+      "id": "ft4",
+      "name": "freies T4",
+      "gruppe": "hormone",
+      "einheit": "ng/l",
+      "ordnung": 30,
+      "alias": [
+        "freies T4",
+        "fT4",
+        "FT4"
+      ],
+      "umrechnung": [
+        {
+          "von": "ng/dl",
+          "faktor": 10
+        },
+        {
+          "von": "pmol/l",
+          "faktor": 0.777
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "name": "T3",
+      "gruppe": "hormone",
+      "einheit": "ng/ml",
+      "ordnung": 40,
+      "alias": [
+        "T3",
+        "T3 Trijodthyronin"
+      ]
+    },
+    {
+      "id": "t4",
+      "name": "T4",
+      "gruppe": "hormone",
+      "einheit": "µg/dl",
+      "ordnung": 50,
+      "alias": [
+        "T4",
+        "T4 Thyroxin"
+      ]
+    },
+    {
+      "id": "vitd",
+      "name": "25-Hydroxy-Vitamin D",
+      "gruppe": "vitamine",
+      "einheit": "ng/ml",
+      "ordnung": 10,
+      "alias": [
+        "25-Hydroxy-Vitamin D",
+        "Vitamin D",
+        "VD25"
+      ],
+      "umrechnung": [
+        {
+          "von": "nmol/l",
+          "faktor": 0.401
+        }
+      ]
+    },
+    {
+      "id": "b12",
+      "name": "Vitamin B12",
+      "gruppe": "vitamine",
+      "einheit": "pg/ml",
+      "ordnung": 20,
+      "alias": [
+        "Vitamin B12",
+        "VB12"
+      ],
+      "umrechnung": [
+        {
+          "von": "pmol/l",
+          "faktor": 1.355
+        }
+      ]
+    },
+    {
+      "id": "kupfer",
+      "name": "Kupfer",
+      "gruppe": "vitamine",
+      "einheit": "µg/l",
+      "ordnung": 30,
+      "alias": [
+        "Kupfer",
+        "CUS"
+      ]
+    },
+    {
+      "id": "selen",
+      "name": "Selen",
+      "gruppe": "vitamine",
+      "einheit": "µg/l",
+      "ordnung": 40,
+      "alias": [
+        "Selen (Serum/Plasma)",
+        "Selen",
+        "SEP"
+      ]
+    },
+    {
+      "id": "zink",
+      "name": "Zink",
+      "gruppe": "vitamine",
+      "einheit": "µg/l",
+      "ordnung": 50,
+      "alias": [
+        "Zink (SE)",
+        "Zink",
+        "ZINK"
+      ]
+    },
+    {
+      "id": "coerulo",
+      "name": "Coeruloplasmin",
+      "gruppe": "vitamine",
+      "einheit": "mg/dl",
+      "ordnung": 60,
+      "alias": [
+        "Coeruloplasmin",
+        "COER"
+      ]
+    },
+    {
+      "id": "ca199",
+      "name": "CA 19-9",
+      "gruppe": "tumormarker",
+      "einheit": "U/ml",
+      "ordnung": 10,
+      "alias": [
+        "CA 19-9",
+        "CA 19-9 (Roche)",
+        "C19"
+      ]
+    },
+    {
+      "id": "cea",
+      "name": "CEA",
+      "gruppe": "tumormarker",
+      "einheit": "ng/ml",
+      "ordnung": 20,
+      "alias": [
+        "CEA",
+        "CEA (Roche)"
+      ]
+    },
+    {
+      "id": "trak",
+      "name": "TRAK",
+      "gruppe": "immunologie",
+      "einheit": "IU/l",
+      "ordnung": 10,
+      "alias": [
+        "TRAK",
+        "AK gg. TSH-Rezeptor (TRAK)",
+        "AK gegen TSH-Rezeptor"
+      ]
+    },
+    {
+      "id": "tpo",
+      "name": "TPO-Antikörper",
+      "gruppe": "immunologie",
+      "einheit": "U/ml",
+      "ordnung": 20,
+      "alias": [
+        "TPO-Antikörper",
+        "AK gg. Thyreoperoxydase (TPO)",
+        "TPO"
+      ]
+    },
+    {
+      "id": "ccp",
+      "name": "AK gegen CCP",
+      "gruppe": "immunologie",
+      "einheit": "U/ml",
+      "ordnung": 30,
+      "alias": [
+        "AK gegen CCP",
+        "AK gg. CCP",
+        "CCP"
+      ]
+    },
+    {
+      "id": "mpo",
+      "name": "AK gegen MPO",
+      "gruppe": "immunologie",
+      "einheit": "U/ml",
+      "ordnung": 40,
+      "alias": [
+        "AK gegen MPO",
+        "AK gg. MPO",
+        "MPO"
+      ]
+    },
+    {
+      "id": "pr3",
+      "name": "AK gegen PR3",
+      "gruppe": "immunologie",
+      "einheit": "U/ml",
+      "ordnung": 50,
+      "alias": [
+        "AK gegen PR3",
+        "AK gg. Proteinase 3 (PR3)",
+        "PR3"
+      ]
+    },
+    {
+      "id": "canca",
+      "name": "c-ANCA",
+      "gruppe": "immunologie",
+      "einheit": "",
+      "ordnung": 60,
+      "alias": [
+        "c-ANCA",
+        "ACPA01"
+      ]
+    },
+    {
+      "id": "panca",
+      "name": "p-ANCA",
+      "gruppe": "immunologie",
+      "einheit": "",
+      "ordnung": 70,
+      "alias": [
+        "p-ANCA",
+        "PANCA"
+      ]
+    },
+    {
+      "id": "rf",
+      "name": "Rheumafaktor",
+      "gruppe": "immunologie",
+      "einheit": "IU/ml",
+      "ordnung": 80,
+      "alias": [
+        "Rheumafaktor",
+        "RFT"
+      ]
+    },
+    {
+      "id": "rfa",
+      "name": "IgA-Rheumafaktor",
+      "gruppe": "immunologie",
+      "einheit": "U/ml",
+      "ordnung": 90,
+      "alias": [
+        "IgA-Rheumafaktor",
+        "RFA"
+      ]
+    },
+    {
+      "id": "asl",
+      "name": "Anti-Streptolysin",
+      "gruppe": "immunologie",
+      "einheit": "IU/ml",
+      "ordnung": 100,
+      "alias": [
+        "Anti-Streptolysin",
+        "ASL"
+      ]
+    },
+    {
+      "id": "iga",
+      "name": "IgA",
+      "gruppe": "immunologie",
+      "einheit": "mg/dl",
+      "ordnung": 110,
+      "alias": [
+        "IgA",
+        "IGA"
+      ]
+    },
+    {
+      "id": "igg",
+      "name": "IgG",
+      "gruppe": "immunologie",
+      "einheit": "mg/dl",
+      "ordnung": 120,
+      "alias": [
+        "IgG",
+        "IGG"
+      ]
+    },
+    {
+      "id": "igm",
+      "name": "IgM",
+      "gruppe": "immunologie",
+      "einheit": "mg/dl",
+      "ordnung": 130,
+      "alias": [
+        "IgM",
+        "IGM"
+      ]
+    },
+    {
+      "id": "hlab27",
+      "name": "HLA-B27",
+      "gruppe": "immunologie",
+      "einheit": "",
+      "ordnung": 140,
+      "alias": [
+        "HLA-B27",
+        "HLA-B 27",
+        "HLAB27"
+      ]
+    },
+    {
+      "id": "ebv_igg",
+      "name": "EB-VCA-IgG",
+      "gruppe": "serologie",
+      "einheit": "U/ml",
+      "ordnung": 10,
+      "alias": [
+        "EB-VCA-IgG",
+        "EB-VCA-IgG-AK (SE)",
+        "EBVCAG"
+      ]
+    },
+    {
+      "id": "ebna",
+      "name": "EBNA1-IgG",
+      "gruppe": "serologie",
+      "einheit": "U/ml",
+      "ordnung": 20,
+      "alias": [
+        "EBNA1-IgG",
+        "EBNA1-IgG-AK (SE)",
+        "EBVNA"
+      ]
+    },
+    {
+      "id": "hsv_igg",
+      "name": "HSV-IgG",
+      "gruppe": "serologie",
+      "einheit": "Index",
+      "ordnung": 30,
+      "alias": [
+        "HSV-IgG",
+        "HSV-IgG-AK (SE)",
+        "HSV-IgG-AK",
+        "HSVG"
+      ]
+    },
+    {
+      "id": "hsv_igm",
+      "name": "HSV-IgM",
+      "gruppe": "serologie",
+      "einheit": "Index",
+      "ordnung": 40,
+      "alias": [
+        "HSV-IgM",
+        "HSV-IgM-AK (SE)",
+        "HSVM"
+      ]
+    },
+    {
+      "id": "tpha",
+      "name": "T.-pallidum-AK",
+      "gruppe": "serologie",
+      "einheit": "",
+      "ordnung": 50,
+      "alias": [
+        "T.-pallidum-AK",
+        "T.-pallidum-AK - TPPA (SE)",
+        "TPHA",
+        "TPPA"
+      ]
+    },
+    {
+      "id": "borrelien",
+      "name": "Borrelien-Suchtest",
+      "gruppe": "serologie",
+      "einheit": "",
+      "ordnung": 60,
+      "alias": [
+        "Borrelien-Suchtest",
+        "Borrelien-Suchtest (SE)",
+        "BORSU"
+      ]
+    },
+    {
+      "id": "hbsak",
+      "name": "HBs-Antikörper",
+      "gruppe": "serologie",
+      "einheit": "mIU/ml",
+      "ordnung": 70,
+      "alias": [
+        "HBs-Antikörper",
+        "HBs-AK",
+        "BSAK"
+      ]
+    },
+    {
+      "id": "iag",
+      "name": "Influenza A-IgG",
+      "gruppe": "serologie",
+      "einheit": "U/ml",
+      "ordnung": 80,
+      "alias": [
+        "Influenza A-IgG",
+        "Influenza A-Virus-IgG-AK",
+        "IAGN"
+      ]
+    },
+    {
+      "id": "iba",
+      "name": "Influenza B-IgA",
+      "gruppe": "serologie",
+      "einheit": "U/ml",
+      "ordnung": 90,
+      "alias": [
+        "Influenza B-IgA",
+        "Influenza B-Virus-IgA-AK",
+        "IBAN"
+      ]
+    },
+    {
+      "id": "ibg",
+      "name": "Influenza B-IgG",
+      "gruppe": "serologie",
+      "einheit": "U/ml",
+      "ordnung": 100,
+      "alias": [
+        "Influenza B-IgG",
+        "Influenza B-Virus-IgG-AK",
+        "IBGN"
+      ]
+    },
+    {
+      "id": "polio1",
+      "name": "Poliovirus Typ I",
+      "gruppe": "serologie",
+      "einheit": "",
+      "ordnung": 110,
+      "alias": [
+        "Poliovirus Typ I",
+        "Poliovirus Typ I-AK",
+        "POLI1"
+      ]
+    },
+    {
+      "id": "polio3",
+      "name": "Poliovirus Typ III",
+      "gruppe": "serologie",
+      "einheit": "",
+      "ordnung": 120,
+      "alias": [
+        "Poliovirus Typ III",
+        "Poliovirus Typ III-AK",
+        "POLI3"
+      ]
+    },
+    {
+      "id": "polio_text",
+      "name": "Poliovirus (Text)",
+      "gruppe": "serologie",
+      "einheit": "",
+      "ordnung": 130,
+      "alias": [
+        "XXPOLI"
+      ]
+    },
+    {
+      "id": "mengo",
+      "name": "Meningokokken-IgG",
+      "gruppe": "serologie",
+      "einheit": "RE/ml",
+      "ordnung": 140,
+      "alias": [
+        "Meningokokken-IgG",
+        "Meningokokken-IgG-AK",
+        "MEN"
+      ]
+    },
+    {
+      "id": "pneumo",
+      "name": "Pneumokokken-IgG",
+      "gruppe": "serologie",
+      "einheit": "mg/l",
+      "ordnung": 150,
+      "alias": [
+        "Pneumokokken-IgG",
+        "Pneumokokken-IgG-AK",
+        "PNG"
+      ]
+    },
+    {
+      "id": "anti1",
+      "name": "Antibiogramm Keim 1",
+      "gruppe": "serologie",
+      "einheit": "",
+      "ordnung": 160,
+      "alias": [
+        "Antibiogramm Keim 1",
+        "ARESI1"
+      ],
+      "gleiche": [
+        "keine"
+      ]
+    },
+    {
+      "id": "anti2",
+      "name": "Antibiogramm Keim 2",
+      "gruppe": "serologie",
+      "einheit": "",
+      "ordnung": 170,
+      "alias": [
+        "Antibiogramm Keim 2",
+        "ARES"
+      ],
+      "gleiche": [
+        "keine"
+      ]
+    },
+    {
+      "id": "gfr",
+      "name": "CKD-EPI",
+      "gruppe": "urin",
+      "einheit": "ml/min",
+      "ordnung": 10,
+      "alias": [
+        "CKD-EPI",
+        "CKDMDR",
+        "GFR"
+      ]
+    },
+    {
+      "id": "micral",
+      "name": "MICRAL",
+      "gruppe": "urin",
+      "einheit": "",
+      "ordnung": 20,
+      "alias": [
+        "MICRAL"
+      ]
+    }
+  ]
+}

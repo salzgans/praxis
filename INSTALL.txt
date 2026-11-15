@@ -1,0 +1,60 @@
+Praxis auf einen anderen Rechner bringen
+
+Das Paket ist ein Archiv des Programms. Es enthält keine Akte, keine Praxisdaten, keine Briefe, keine Dateien, keine Sicherungen und keine Umzugsnotiz. Der Befehl dafür ist:
+
+    ./praxis paket
+
+Es entsteht eine Datei praxis-DATUM.tar.gz. Auf dem neuen Rechner auspacken, in den Ordner praxis wechseln und die Programme einrichten:
+
+    ./install.sh
+
+Dasselbe ist ./praxis install. Die Akte wird dabei nicht angerührt. --pruefen zeigt nur, was schon da ist.
+
+Linux
+
+Das Skript installiert über apt: Ruby, SQLite, LibreOffice, Poppler, Tesseract mit Deutsch und Ungarisch, catdoc, zip, unzip und lsof. Die mitgelieferte Texterkennung im Ordner ocr ist ein Linux-Programm und gilt nur, wenn kein Tesseract installiert ist. Chrome oder Chromium richtet das Skript nicht ein. Für ./praxis fenster braucht es eines von beiden. Die Seite geht auch im normalen Browser auf.
+
+Der Server, nur auf dem einen zentralen Rechner:
+
+    ./praxis start
+
+Die Seite ist dann http://127.0.0.1:8765. Andere Rechner im Praxisnetz erreicht er erst, wenn man ihn ausdrücklich so startet:
+
+    PRAXIS_BIND=0.0.0.0 PRAXIS_ALLOW_REMOTE=1 ./praxis start
+
+Dafür gibt es noch keine Anmeldung. Nur ein Netz, dem die Praxis vertraut. Nicht ins offene Internet.
+
+Ein Arbeitsplatz, der den Server woanders sucht:
+
+    ./praxis ziel http://192.168.1.20:8765
+    ./praxis fenster
+
+fenster startet auf diesem Rechner praxis lokal. Briefe, Vorlagen und Dateien gehen hier auf, nicht auf dem Server. Eine gespeicherte Änderung geht zurück auf den Server. Rechnung, Rezept und Einnahmeliste drucken über den Browser, ebenfalls hier.
+
+Die Adresse steht in ~/.config/praxis/ziel. Leer heißt dieser Rechner.
+
+Mac
+
+Zuerst Homebrew von https://brew.sh. Danach dasselbe ./install.sh. Es installiert Ruby, SQLite, Poppler, Tesseract mit den Sprachen, catdoc und, falls noch nicht vorhanden, LibreOffice. Die Texterkennung aus dem Ordner ocr läuft auf dem Mac nicht. Dateien öffnet der Mac mit dem Befehl open. Chrome liegt unter Programme, sonst öffnet man die Seite im Browser.
+
+Dieselbe Aufteilung: ein Rechner startet den Server, jeder Arbeitsplatz setzt ziel und startet fenster.
+
+Die Akte mitnehmen
+
+Das Paket lässt die Datenbank weg. Eine bestehende Akte kommt über die Sicherung:
+
+    ./praxis backup
+
+Die Datei aus sicherungen auf den neuen Server kopieren und dort:
+
+    ./praxis restore DATEI
+
+Vorlagen im Ordner vorlagen bleiben im Paket. Sie enthalten den Briefkopf der Briefe. Rechnungskopf und Rezeptkopf stehen in der Akte, nicht in diesen Dateien. Sie kommen mit der Sicherung mit. Die Unterschrift nicht. Die kopiert man bei Bedarf extra, sie heißt unterschrift und liegt unter data.
+
+Der Diagnosenkatalog liegt unter import und ist nicht im Paket. Ohne die Datei `import/icd/meta/Klassifikationsdateien/icd10gm2026syst_kodes.txt` lassen sich keine Katalogdiagnosen übernehmen. Sie stammt aus dem BfArM-Zip `icd10gm2026syst-meta.zip`, Metadaten TXT (CSV) der ICD-10-GM 2026. Herunterladen und Einbinden stehen in `README.md`. Die Datei nur mitnehmen, wenn die Nutzungsbedingungen das für diesen Rechner erlauben.
+
+Die ungarische Übersetzung ist nicht im Paket. Sie bleibt auf dem Rechner und schickt keinen Brieftext weg. Einrichten, Linux oder Mac:
+
+    ./install.sh --mit-ungarisch
+
+Das lädt die Modelle einmal herunter. Sie liegen danach unter ~/.local/share/argos-translate.

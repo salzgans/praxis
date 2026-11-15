@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Besuch erfassen</title>
+<style>
+  body { margin: 0; font: 18px/1.4 "Liberation Sans", sans-serif; background: #f4f1ea; color: #1c2430; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  h2 { font-size: 15px; margin: 22px 0 8px; letter-spacing: 0.04em; text-transform: uppercase; color: #596575; }
+  label { display: block; margin: 10px 0 4px; font-size: 14px; color: #596575; }
+  input, textarea, select, button { font: inherit; }
+  input, textarea, select { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #c5c0b4; border-radius: 8px; background: #fff; }
+  textarea { min-height: 72px; }
+  .row { display: flex; gap: 12px; }
+  .row > * { flex: 1; }
+  .choice { display: flex; gap: 16px; margin: 8px 0; }
+  .choice label { display: flex; gap: 8px; align-items: center; color: #1c2430; font-size: 18px; }
+  button { border: 0; border-radius: 8px; padding: 12px 14px; background: #2458a6; color: #fff; }
+  button.quiet { background: #e7e2d6; color: #1c2430; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .visit { background: #fff; border-radius: 8px; padding: 10px 12px; margin: 8px 0; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .hint { color: #596575; font-size: 14px; }
+  .gone { display: none; }
+  input.nr { width: 6em; }
+  .row .plz { flex: 0 0 8em; }
+  .hnr { width: 11em; max-width: 100%; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Besuch erfassen</h1>
+  <p class="hint">Die Besuche bleiben auf diesem Gerät. Die Datei kommt später in die Praxis.</p>
+
+  <h2>Person</h2>
+  <div class="choice">
+    <label><input type="radio" name="fall" value="bekannt" checked> Bekannte Akte</label>
+    <label><input type="radio" name="fall" value="neu"> Neuaufnahme</label>
+  </div>
+  <div id="bekannt">
+    <label for="nummer">Patientennummer</label>
+    <input id="nummer" class="nr" inputmode="numeric" maxlength="5" autocomplete="off">
+  </div>
+  <label for="nachname">Nachname</label>
+  <input id="nachname" autocomplete="off">
+  <label for="vorname">Vorname</label>
+  <input id="vorname" autocomplete="off">
+  <label for="geburt">Geburtsdatum</label>
+  <input id="geburt" placeholder="tt.mm.jjjj" autocomplete="off">
+  <div class="row">
+    <div class="plz">
+      <label for="plz">PLZ</label>
+      <input id="plz" inputmode="numeric" maxlength="5" autocomplete="off">
+    </div>
+    <div>
+      <label for="wohnort">Wohnort</label>
+      <input id="wohnort" autocomplete="off">
+    </div>
+  </div>
+  <label for="strasse">Straße</label>
+  <input id="strasse" maxlength="30" autocomplete="off">
+  <div class="hnr">
+    <label for="hausnummer">Hausnummer</label>
+    <input id="hausnummer" maxlength="10" autocomplete="off">
+  </div>
+  <label for="sv">Versicherungsnummer, zehn Stellen</label>
+  <input id="sv" inputmode="numeric" maxlength="12" autocomplete="off">
+
+  <h2>Besuch</h2>
+  <div class="choice">
+    <label><input type="radio" name="art" value="ordi"> Ordi</label>
+    <label><input type="radio" name="art" value="besuch"> Besuch</label>
+  </div>
+  <div class="row">
+    <div>
+      <label for="datum">Datum</label>
+      <input id="datum" type="date">
+    </div>
+    <div>
+      <label for="uhr">Uhrzeit</label>
+      <input id="uhr" type="time">
+    </div>
+  </div>
+
+  <h2>Text</h2>
+  <label for="anamnese">Anamnese</label>
+  <textarea id="anamnese"></textarea>
+  <label for="befund">Befund</label>
+  <textarea id="befund"></textarea>
+  <label for="diagnose">Diagnose</label>
+  <textarea id="diagnose"></textarea>
+  <label for="info">Info</label>
+  <textarea id="info"></textarea>
+  <label for="procedere">Procedere</label>
+  <textarea id="procedere"></textarea>
+
+  <div class="tools">
+    <button id="save" type="button">Merken</button>
+    <button id="file" class="quiet" type="button">Datei sichern</button>
+  </div>
+  <p class="hint" id="note"></p>
+  <h2>Noch nicht eingelesen</h2>
+  <div id="list"></div>
+</main>
+<script>
+const KEY = "praxis.besuche";
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); }
+  catch (err) { return []; }
+}
+function store(rows) { localStorage.setItem(KEY, JSON.stringify(rows)); }
+
+function val(id) { return document.getElementById(id).value.trim(); }
+function note(text) { document.getElementById("note").textContent = text; }
+
+function showFall() {
+  const neu = document.querySelector("input[name=fall]:checked").value === "neu";
+  document.getElementById("bekannt").classList.toggle("gone", neu);
+  document.getElementById("wohnort").required = neu;
+}
+
+function paint() {
+  const box = document.getElementById("list");
+  box.textContent = "";
+  const rows = load();
+  if (!rows.length) {
+    const p = document.createElement("p");
+    p.className = "hint";
+    p.textContent = "Noch nichts gemerkt.";
+    box.appendChild(p);
+    return;
+  }
+  rows.forEach(function (row, index) {
+    const line = document.createElement("div");
+    line.className = "visit";
+    const text = document.createElement("div");
+    const who = row.neu ? [row.nachname, row.vorname].filter(Boolean).join(", ") : ("Nr. " + row.nummer);
+    text.textContent = who + "  " + (row.art === "ordi" ? "Ordi" : "Besuch") + "  " + row.datum + " " + row.uhrzeit;
+    const gone = document.createElement("button");
+    gone.type = "button";
+    gone.className = "quiet";
+    gone.textContent = "Weg";
+    gone.addEventListener("click", function () {
+      const next = load();
+      next.splice(index, 1);
+      store(next);
+      paint();
+    });
+    line.appendChild(text);
+    line.appendChild(gone);
+    box.appendChild(line);
+  });
+}
+
+function digits(value) { return String(value || "").replace(/\D/g, ""); }
+
+document.querySelectorAll("input[name=fall]").forEach(function (el) {
+  el.addEventListener("change", showFall);
+});
+
+document.getElementById("save").addEventListener("click", function () {
+  const neu = document.querySelector("input[name=fall]:checked").value === "neu";
+  const art = document.querySelector("input[name=art]:checked");
+  const sv = digits(val("sv"));
+  if (!art) { note("Ordi oder Besuch wählen."); return; }
+  if (sv.length !== 10) { note("Die Versicherungsnummer hat zehn Stellen."); return; }
+  if (!val("datum") || !val("uhr")) { note("Datum und Uhrzeit fehlen."); return; }
+  const plz = digits(val("plz"));
+  if (plz && plz.length !== 4 && plz.length !== 5) {
+    note("Die PLZ hat vier oder fünf Stellen.");
+    return;
+  }
+  if (neu) {
+    if (!val("nachname") || !val("geburt") || !val("wohnort")) {
+      note("Nachname, Geburtsdatum und Wohnort fehlen.");
+      return;
+    }
+  } else if (!/^\d{1,5}$/.test(val("nummer"))) {
+    note("Die Patientennummer hat höchstens fünf Stellen.");
+    return;
+  }
+  const row = {
+    neu: neu,
+    nummer: neu ? "" : val("nummer"),
+    nachname: val("nachname"),
+    vorname: val("vorname"),
+    geburtsdatum: val("geburt"),
+    wohnort: val("wohnort"),
+    strasse: val("strasse"),
+    hausnummer: val("hausnummer"),
+    plz: plz,
+    versicherung: sv,
+    art: art.value,
+    datum: val("datum"),
+    uhrzeit: val("uhr"),
+    anamnese: val("anamnese"),
+    befund: val("befund"),
+    diagnose: val("diagnose"),
+    info: val("info"),
+    procedere: val("procedere")
+  };
+  const rows = load();
+  rows.push(row);
+  store(rows);
+  ["anamnese", "befund", "diagnose", "info", "procedere", "sv", "nummer"].forEach(function (id) {
+    document.getElementById(id).value = "";
+  });
+  note("Gemerk.");
+  paint();
+});
+
+document.getElementById("file").addEventListener("click", function () {
+  const rows = load();
+  if (!rows.length) { note("Noch nichts zu sichern."); return; }
+  const blob = new Blob([JSON.stringify({ besuche: rows }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "besuche.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  note("Datei gesichert. Nach dem Einlesen in der Praxis die Zeilen hier mit Weg löschen.");
+});
+
+const now = new Date();
+document.getElementById("datum").value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+document.getElementById("uhr").value = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+showFall();
+paint();
+</script>
+</body>
+</html>

@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Praxis</title>
+<style>
+  /* One page, laid out for 1280x800. Windows are position:absolute on #desk.
+     .win is hidden until it has .show. [hidden] stays hidden even when a class would show it.
+     The chart header is one row: identity, Dauerdiagnosen, and CAVE on the right in red.
+     Patient text is never assigned as HTML. */
+  :root {
+    --ink: #1c1f23;
+    --muted: #5e6872;
+    --line: #d5d8dc;
+    --blue: #1e4f86;
+    --bar: #f7f8f9;
+    --desk: #d7dbdf;
+    --title: #eef0f2;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    color: var(--ink);
+    background: var(--desk);
+    overflow: hidden;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  #bar {
+    height: 62px;
+    background: var(--bar);
+    border-bottom: 1px solid #c4c8cc;
+    display: flex;
+    align-items: stretch;
+    padding: 0 8px;
+    gap: 2px;
+  }
+  .tool {
+    width: 104px;
+    border: 0;
+    background: transparent;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: #243140;
+  }
+  .tool svg { width: 22px; height: 22px; stroke: var(--blue); fill: none; stroke-width: 1.7; }
+  .tool span { font-size: 11px; letter-spacing: 0.01em; }
+  .tool:hover, .tool.on { background: #e5eef6; }
+  #desk { position: relative; height: calc(100% - 94px); }
+  /* People in the practice. The button opens WZ. A name opens that chart. × only removes them from the room. */
+  #warte-strip {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px;
+    background: #fff;
+    border-bottom: 1px solid #c4c8cc;
+  }
+  #warte-open, #warte-add { flex: 0 0 auto; }
+  .act:disabled { opacity: 0.45; cursor: default; }
+  .warte-moves { display: inline-flex; gap: 4px; align-items: center; }
+  .warte-pos { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .term-waitperson { display: inline-flex; align-items: center; gap: 4px; }
+  .term-waitmove { height: 22px; padding: 0 6px; }
+  #warte-names {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+    overflow-x: auto;
+  }
+  .warte-empty { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .warte-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 24px;
+    padding: 0 4px 0 8px;
+    border-radius: 12px;
+    background: #e7f2ea;
+    border: 1px solid #b7d7c2;
+    flex: 0 0 auto;
+    max-width: 280px;
+  }
+  .warte-chip.wait { background: #fff6e5; border-color: #e2c98a; }
+  .warte-name, .warte-x, .warte-openchart, .term-waitname, button.warte-hit {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+  }
+  .warte-name {
+    font-size: 13px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .warte-x { width: 22px; height: 22px; color: var(--muted); font-size: 16px; line-height: 1; }
+  .warte-openchart { font-weight: 650; text-align: left; }
+  button.warte-hit { width: 100%; text-align: left; border-bottom: 1px solid #eef0f2; }
+  button.warte-hit.on { background: #e5eef6; }
+  .term-wait {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    align-items: center;
+    padding: 8px 12px;
+    background: #fff6e5;
+    border-bottom: 1px solid #e2c98a;
+    font-size: 13px;
+  }
+  .term-waitlabel { font-weight: 650; }
+  .term-waitname { text-decoration: underline; }
+  .win {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #b7bcc2;
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(28, 31, 35, 0.16);
+    display: none;
+    flex-direction: column;
+    min-width: 320px;
+    overflow: hidden;
+  }
+  .resize { position: absolute; z-index: 4; touch-action: none; }
+  .resize.n { left: 8px; right: 36px; top: 0; height: 6px; cursor: ns-resize; }
+  .resize.s { left: 8px; right: 8px; bottom: 0; height: 6px; cursor: ns-resize; }
+  .resize.e { top: 36px; right: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
+  .resize.w { top: 36px; left: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
+  .resize.nw, .resize.se, .resize.sw { width: 14px; height: 14px; }
+  .resize.nw { top: 0; left: 0; cursor: nwse-resize; }
+  .resize.se { right: 0; bottom: 0; cursor: nwse-resize; }
+  .resize.sw { left: 0; bottom: 0; cursor: nesw-resize; }
+  .resize.se::after {
+    content: "";
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid #7d868f;
+    border-bottom: 2px solid #7d868f;
+  }
+  .win.show { display: flex; }
+  .title {
+    height: 34px;
+    background: var(--title);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    padding: 0 8px 0 12px;
+    cursor: grab;
+    user-select: none;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .title:active { cursor: grabbing; }
+  .title .x {
+    position: relative;
+    z-index: 6;
+    margin-left: auto;
+    width: 26px;
+    height: 22px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+  }
+  .title .x:hover { background: #e2e5e8; }
+  .who-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .who-line:has(+ .rel:not([hidden])) { border-bottom: 0; padding-bottom: 2px; }
+  .who {
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .who em { font-style: normal; font-weight: 450; color: var(--muted); margin-left: 12px; }
+  .who .nr { color: var(--blue); margin-right: 10px; font-variant-numeric: tabular-nums; }
+  .rel {
+    padding: 0 16px 8px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .headnote {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  #dauer { flex: 1 1 auto; }
+  #cave {
+    flex: 0 0 auto;
+    margin-left: auto;
+    color: #9d1c1c;
+    font-weight: 700;
+    text-align: right;
+  }
+  .headnote .item {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #cave .item { text-align: right; }
+  .rel a { color: var(--blue); text-decoration: none; margin-right: 14px; }
+  .rel a:hover { text-decoration: underline; }
+  .sheet { flex: 1; overflow: auto; background: #fff; }
+  .day { padding: 8px 16px 0; color: var(--muted); font-size: 12px; }
+  .entry { display: flex; gap: 12px; padding: 2px 16px; }
+  .tag {
+    width: 124px;
+    flex: none;
+    color: var(--blue);
+    font-weight: 650;
+    font-size: 13px;
+    padding-top: 1px;
+  }
+  .tag.linkish { cursor: pointer; }
+  .tag.linkish:hover { text-decoration: underline; }
+  .tag.cave { color: #9d1c1c; }
+  button.dauer {
+    flex: none;
+    height: 22px;
+    margin-top: 1px;
+    border: 1px solid #b7bcc2;
+    border-radius: 4px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 0 6px;
+  }
+  button.dauer.on { color: var(--blue); border-color: var(--blue); font-weight: 650; }
+  .body { flex: 1; font-size: 16px; line-height: 1.25; outline: none; min-height: 1.25em; white-space: pre-wrap; }
+  .body:focus, .dxtext:focus { background: #f4f8fc; }
+  .body.dxline { white-space: normal; }
+  .dxcode { font-weight: 650; margin-right: 0.45em; }
+  .dxtext { outline: none; }
+  .body.linkish { cursor: pointer; }
+  .foot {
+    height: 46px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px;
+    background: #f7f8f9;
+  }
+  .foot input {
+    width: 88px;
+    height: 30px;
+    border: 1px solid #b7bcc2;
+    border-radius: 5px;
+    padding: 0 8px;
+    background: #fff;
+    text-transform: uppercase;
+  }
+  .foot input:focus { outline: 2px solid #c5d7ea; border-color: var(--blue); }
+  .hint { color: var(--muted); font-size: 13px; }
+  .pad { padding: 12px 16px 18px; }
+  h2 {
+    margin: 14px 0 8px;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 6px 0; vertical-align: baseline; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.code { width: 84px; color: var(--blue); font-weight: 650; }
+  td.faktor { width: 64px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .sum { text-align: right; margin: 8px 0 12px; font-size: 14px; }
+  .act {
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 5px;
+    border: 1px solid #b7bcc2;
+    background: #fff;
+  }
+  .act.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .act.tiny { height: 26px; padding: 0 8px; }
+  .rowline {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #eef0f2;
+    font-size: 15px;
+  }
+  .rowline.on, .pick.on { background: #e5eef6; }
+  .search, .field input, .field select, .field textarea, #px-tels input, .inline input {
+    border: 1px solid #b7bcc2;
+    border-radius: 5px;
+    background: #fff;
+    font: inherit;
+  }
+  .search { width: 100%; height: 32px; padding: 0 8px; margin-bottom: 8px; }
+  .pat-filters { padding-bottom: 0; }
+  .pat-filters .search { margin-bottom: 4px; }
+  .criteria { margin: 0 0 8px; line-height: 1.35; }
+  #pat-count { margin-left: auto; }
+  #pat-list { padding: 0 16px 12px; }
+  .pick {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    padding: 8px 2px;
+    border-bottom: 1px solid #eef0f2;
+    font-size: 15px;
+  }
+  .pick.wrap { white-space: normal; line-height: 1.35; }
+  .pick.wrap .hint { display: block; margin-top: 2px; }
+  .rowline .pick { width: auto; flex: 1; }
+  .pick:hover { background: #f4f8fc; }
+  .dose { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  #open-stamm { cursor: pointer; }
+  .form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 18px;
+    padding: 14px 16px 18px;
+  }
+  .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .field.wide { grid-column: 1 / -1; }
+  .field label { font-size: 12px; color: var(--muted); }
+  .field input, .field select { height: 30px; padding: 0 8px; }
+  #praxis .set-sheet { display: flex; overflow: hidden; }
+  #praxis .set-body { display: flex; flex: 1; min-height: 0; width: 100%; }
+  #praxis .set-nav {
+    flex: 0 0 168px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    border-right: 1px solid var(--line);
+    background: #f7f8f9;
+  }
+  #praxis .set-nav button {
+    height: 34px;
+    text-align: left;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    padding: 0 10px;
+  }
+  #praxis .set-nav button.on { background: #e5eef6; color: var(--blue); font-weight: 650; }
+  #praxis .set-main { flex: 1; min-width: 0; overflow: auto; }
+  .fee-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eef0f2;
+  }
+  .fee-row .code {
+    width: 108px;
+    flex: none;
+    color: var(--blue);
+    font-weight: 650;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fee-row input {
+    height: 30px;
+    border: 1px solid #b7bcc2;
+    border-radius: 5px;
+    background: #fff;
+    padding: 0 8px;
+  }
+  .fee-row input.text { flex: 1; min-width: 0; }
+  .fee-row input.betrag { width: 96px; flex: none; }
+  .fee-row input.datum { width: 118px; flex: none; }
+  .fee-row .what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .inv-span { margin: 0 0 8px; font-weight: 650; }
+  .empf { display: flex; gap: 8px; }
+  .empf input { flex: 1; }
+  .doc {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #f7f8f9;
+    padding: 10px 12px;
+    margin: 12px 0;
+    font-size: 15px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+  }
+  .doc .kicker { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .doc img { max-width: 100%; max-height: 520px; display: block; }
+  .doc iframe { width: 100%; height: 480px; border: 1px solid var(--line); background: #fff; }
+  .doc .open-file { display: inline-block; margin-top: 8px; }
+  table.lab { border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  table.lab th, table.lab td {
+    border-bottom: 1px solid var(--line);
+    border-right: 1px solid #e6e8eb;
+    padding: 4px 8px;
+    vertical-align: top;
+    white-space: nowrap;
+    background: #fff;
+  }
+  table.lab thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f3f5f7;
+    font-weight: 600;
+    text-align: left;
+  }
+  table.lab tbody th, table.lab thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 168px;
+    max-width: 240px;
+    white-space: normal;
+    text-align: left;
+  }
+  table.lab thead th:first-child { z-index: 3; background: #f3f5f7; }
+  table.lab .norm, table.lab .umger { color: var(--muted); font-size: 12px; }
+  table.lab .flag { color: #8c2f2f; font-weight: 650; }
+  table.lab tr.lab-group th {
+    background: #e7eef5;
+    color: var(--blue);
+    font-size: 13px;
+    position: sticky;
+    left: 0;
+  }
+  table.lab td { white-space: normal; max-width: 220px; }
+  #labor-tools { padding: 8px 12px 0; background: #fff; border-bottom: 1px solid var(--line); }
+  .lab-form, .lab-assign { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; padding-bottom: 8px; }
+  .lab-form .field { width: 148px; }
+  .lab-form .field.grow { width: 220px; }
+  .lab-assign .field { width: 180px; }
+  .lab-lines { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 12px; }
+  .lab-lines th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 650; padding: 4px; }
+  .lab-lines td { padding: 3px 4px; border-top: 1px solid #eef0f2; vertical-align: middle; }
+  .lab-lines input { width: 100%; height: 28px; padding: 0 6px; }
+  #labor-sheet > .hint, #file-hint { padding: 10px 12px 0; }
+  button.tiny { height: 22px; font-size: 12px; margin-top: 4px; padding: 0 6px; }
+  table.plan { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.plan th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--muted);
+    padding: 4px 8px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  table.plan td { padding: 8px; border-bottom: 1px solid #eef0f2; vertical-align: top; }
+  #pat-list table.plan thead th { position: sticky; top: 0; background: #fff; }
+  #pat-list table.plan tbody tr { cursor: pointer; }
+  #pat-list table.plan tbody tr:hover td { background: #f4f8fc; }
+  #pat-list table.plan tbody tr.on td { background: #e5eef6; }
+  table.plan td.nr { width: 52px; color: var(--blue); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.plan td.typ { width: 28px; color: var(--blue); font-weight: 700; }
+  table.plan td.dose, table.plan td.date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .doc-title { margin: 0 0 6px; font-size: 18px; font-weight: 650; }
+  .rx-kicker { font-weight: 700; font-size: 18px; letter-spacing: 0.02em; }
+  .rx-arzt { font-weight: 700; margin-top: 10px; }
+  .rx-muted { color: var(--muted); font-size: 12px; }
+  .rx-item { margin: 0 0 7mm; }
+  .rx-item strong { display: block; font-size: 13pt; font-weight: 650; }
+  .rx-use { margin-top: 1mm; white-space: pre-line; }
+  #privatrezept .sheet, #rechnung .sheet { display: flex; flex-direction: column; }
+  #privatrezept .pad, #rechnung .pad { flex: 1; display: flex; flex-direction: column; }
+  #privatrezept .pad { background: #e6e8eb; padding: 16px; }
+  .rx-body { flex: 1; }
+  .rx-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12mm; }
+  .rx-head .letterhead { margin: 0; flex: 1; }
+  .rx-side { flex: none; text-align: right; }
+  .rx-date { margin-top: 2mm; }
+  .rx-who-block { margin-top: 12mm; }
+  .rx-label { font-size: 11px; color: var(--muted); }
+  .rx-name { font-size: 14pt; font-weight: 650; line-height: 1.3; }
+  .rx-address { white-space: pre-line; line-height: 1.35; margin-top: 1mm; }
+  .rx-rp { font-weight: 700; font-style: italic; font-size: 16pt; margin: 10mm 0 6mm; }
+  .rx-page {
+    page: rxpage;
+    display: flex;
+    flex-direction: column;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 16px;
+    padding: 16mm 16mm 16mm 20mm;
+    box-sizing: border-box;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(28, 31, 35, 0.16);
+  }
+  .rx-foot {
+    display: grid;
+    grid-template-columns: 1fr 72mm;
+    align-items: end;
+    gap: 8mm;
+    margin-top: auto;
+    padding-top: 10mm;
+  }
+  .rx-sign { text-align: center; font-size: 12px; }
+  .rx-sign .line { border-top: 1px solid #1c1f23; padding-top: 4px; }
+  .rx-sign img { max-width: 52mm; max-height: 16mm; display: block; margin: 0 auto 2px; object-fit: contain; }
+  .rx-stamp {
+    justify-self: end;
+    width: 72mm;
+    border: 1px solid #1c1f23;
+    padding: 3mm 3.5mm;
+    color: #1c1f23;
+    text-align: center;
+    font-size: 10.5pt;
+    line-height: 1.35;
+    background: #fff;
+  }
+  .rx-stamp strong { display: block; font-size: 11.5pt; }
+  .rx-mark { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; font-size: 14px; }
+  .rx-mark input { margin-top: 3px; }
+  #rx-plan { margin-bottom: 6px; }
+  .letterhead { font-size: 13px; line-height: 1.45; margin: 0 0 14px; white-space: pre-line; }
+  .inv-row { display: flex; justify-content: space-between; gap: 24px; margin: 8px 0 14px; }
+  .inv-address { white-space: pre-line; line-height: 1.4; }
+  .inv-return { font-size: 11px; color: var(--muted); }
+  .inv-who { white-space: pre-line; }
+  .inv-info { text-align: right; white-space: nowrap; }
+  .inv-date { white-space: nowrap; }
+  .inv-fold { display: none; }
+  .inv-hello, .inv-bank, .inv-close { white-space: pre-line; line-height: 1.45; }
+  .inv-hello { margin: 12px 0; }
+  .inv-bank { margin: 14px 0 0; }
+  .inv-close { margin-top: 18px; }
+  .inv-faktor { color: var(--muted); font-size: 12px; }
+  table.inv th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--muted);
+    padding: 4px 8px 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  table.inv td { border-bottom: 1px solid #eef0f2; padding-right: 8px; }
+  table.inv th.num, table.inv td.num { text-align: right; padding-right: 0; }
+  #set-rechnung-text, #set-rechnungskopf, #set-rezeptkopf {
+    width: 100%;
+    min-height: 110px;
+    margin: 0 0 8px;
+    padding: 6px 8px;
+    border: 1px solid #b7bcc2;
+    border-radius: 5px;
+    resize: vertical;
+  }
+  #briefe .pad { display: flex; flex-direction: column; min-height: 100%; }
+  .letter-picks { flex: 1; min-height: 180px; max-height: 320px; overflow: auto; margin: 0 0 8px; border: 1px solid #e1e4e8; }
+  #adr-list, #bau-list { max-height: 180px; overflow: auto; border: 1px solid #e1e4e8; margin: 0 0 8px; }
+  #bau-list .pick { white-space: pre-wrap; }
+  #bau-text { min-height: 96px; }
+  #kuerzel-list td.code { width: auto; white-space: nowrap; padding-right: 16px; }
+  #kuerzel-list td { white-space: pre-wrap; }
+  #letter-adresse { flex: 1; min-width: 0; height: 30px; }
+  #letter-adresse-note { white-space: pre-wrap; margin-top: 6px; }
+  .letter-row { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border-bottom: 1px solid #eef0f2; font-size: 14px; line-height: 1.35; }
+  .letter-row input { flex: none; margin-top: 3px; }
+  .letter-row span { flex: 1; min-width: 0; white-space: pre-wrap; user-select: text; }
+  .letter-row b { display: block; font-size: 12px; color: var(--muted); font-weight: 650; }
+  .field textarea { min-height: 72px; resize: vertical; padding: 6px 8px; }
+  #px-tels { display: flex; flex-direction: column; gap: 8px; }
+  #px-tels input { height: 30px; padding: 0 8px; }
+  #px-add-tel, #px-save { align-self: flex-start; width: auto; }
+  #px-sign-preview { max-width: 200px; max-height: 64px; display: block; margin-top: 8px; }
+  .banner {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 8px 10px;
+    background: #e5eef6;
+    border-radius: 5px;
+    font-size: 13px;
+  }
+  .inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+  .inline input { height: 30px; padding: 0 8px; }
+  .dose-edit { display: inline-flex; gap: 6px; align-items: flex-end; }
+  .dose-edit label, .dose-edit span { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--muted); font-weight: 450; }
+  .dose-edit input {
+    width: 52px;
+    height: 30px;
+    padding: 0 4px;
+    text-align: center;
+    color: var(--ink);
+    border: 1px solid #b7bcc2;
+    border-radius: 5px;
+    background: #fff;
+  }
+  .gap { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .empty { color: var(--muted); padding: 18px 16px; }
+  @page rxpage { size: A4 portrait; margin: 0; }
+  @page rechnung { size: A4 portrait; margin: 0; }
+  @media print {
+    body { background: #fff; overflow: visible; }
+    #bar, #warte-strip, .win { display: none !important; }
+    .resize { display: none !important; }
+    .win.print-on {
+      display: block !important;
+      position: absolute;
+      left: 0 !important;
+      top: 0 !important;
+      right: auto !important;
+      width: 100% !important;
+      height: auto !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      border: 0;
+      box-shadow: none;
+      overflow: visible !important;
+    }
+    .win.print-on .sheet { overflow: visible !important; height: auto !important; }
+    .no-print { display: none !important; }
+    #privatrezept.print-on { page: rxpage; }
+    #privatrezept.print-on .sheet,
+    #privatrezept.print-on .pad { display: block; background: #fff; padding: 0; overflow: visible; }
+    #privatrezept.print-on .rx-page {
+      width: 210mm;
+      height: 297mm;
+      min-height: 297mm;
+      margin: 0;
+      box-shadow: none;
+      break-after: page;
+    }
+    #privatrezept.print-on .rx-page:last-of-type { break-after: auto; }
+    #rechnung.print-on { page: rechnung; }
+    #rechnung.print-on .inv-page {
+      position: relative;
+      width: 210mm;
+      min-height: 297mm;
+      padding-top: 100mm;
+      box-sizing: border-box;
+    }
+    #rechnung.print-on .letterhead {
+      position: absolute;
+      top: 8mm;
+      left: 25mm;
+      width: 165mm;
+      max-height: 32mm;
+      margin: 0;
+      overflow: hidden;
+      font-size: 11pt;
+      line-height: 1.3;
+    }
+    #rechnung.print-on .inv-row { display: block; margin: 0; }
+    #rechnung.print-on .inv-address {
+      position: absolute;
+      top: 45mm;
+      left: 20mm;
+      width: 85mm;
+      height: 45mm;
+      box-sizing: border-box;
+      padding: 14mm 2mm 0 5mm;
+      overflow: hidden;
+    }
+    #rechnung.print-on .inv-return {
+      margin: 0 0 1mm;
+      color: #222;
+      font-size: 8pt;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    #rechnung.print-on .inv-who { font-size: 11pt; line-height: 1.25; }
+    #rechnung.print-on .inv-info {
+      position: absolute;
+      top: 50mm;
+      left: 125mm;
+      width: 75mm;
+      text-align: left;
+      font-size: 11pt;
+      line-height: 1.35;
+    }
+    #rechnung.print-on .inv-body { margin: 0 20mm 16mm 25mm; }
+    #rechnung.print-on .inv-fold {
+      display: block;
+      position: absolute;
+      left: 0;
+      width: 5mm;
+      height: 0;
+      border-top: 0.4pt solid #222;
+    }
+    #rechnung.print-on .inv-fold.oben { top: 105mm; }
+    #rechnung.print-on .inv-fold.mitte { top: 148.5mm; width: 8mm; }
+    #rechnung.print-on .inv-fold.unten { top: 210mm; }
+  }
+  #termine .term-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  #termine .term-tools input,
+  #termine .term-tools select {
+    height: 28px;
+    border: 1px solid #b7bcc2;
+    border-radius: 5px;
+    padding: 0 6px;
+    background: #fff;
+  }
+  #term-dauer { width: 52px; }
+  #term-url-von, #term-url-bis, #term-url-note { width: 96px; }
+  #term-week { font-weight: 650; }
+  #term-status { color: var(--muted); min-width: 160px; }
+  .term-legend { display: flex; flex-wrap: wrap; gap: 10px 14px; padding: 6px 12px; font-size: 12px; }
+  .term-key { display: inline-flex; align-items: center; gap: 6px; }
+  .term-sw { width: 10px; height: 10px; border-radius: 2px; }
+  .term-board { position: relative; }
+  .term-head, .term-body { display: grid; grid-template-columns: 52px repeat(7, minmax(0, 1fr)); }
+  .term-head { position: sticky; top: 0; z-index: 3; background: #fff; border-bottom: 1px solid var(--line); }
+  .term-dayname { font-size: 12px; font-weight: 650; padding: 4px 4px 0; }
+  .term-lanes, .term-day { display: flex; min-width: 0; }
+  .term-lanename, .term-lane { flex: 1 1 36px; min-width: 36px; }
+  .term-lanename {
+    font-size: 10px;
+    padding: 2px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    border-top: 3px solid transparent;
+  }
+  .term-gutter { position: relative; }
+  .term-hour { position: absolute; left: 4px; font-size: 10px; color: var(--muted); }
+  .term-day { border-left: 1px solid #e1e4e8; }
+  .term-lane { position: relative; background: #d5d8dd; border-left: 1px solid #f7f8f9; cursor: pointer; }
+  .term-open { position: absolute; left: 0; right: 0; background: #fff; }
+  .term-line { position: absolute; left: 0; right: 0; border-top: 1px solid #eef0f2; pointer-events: none; }
+  .term-item {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    overflow: hidden;
+    border-radius: 2px;
+    font-size: 10px;
+    line-height: 1.15;
+    padding: 0 2px;
+    z-index: 1;
+  }
+  .term-item.apt { color: #10283c; }
+  .term-item.block { background: #f3d0d0; color: #6d1d1d; }
+  .term-item.shut {
+    background: repeating-linear-gradient(45deg, rgba(90, 98, 108, 0.16), rgba(90, 98, 108, 0.16) 5px, rgba(90, 98, 108, 0.3) 5px, rgba(90, 98, 108, 0.3) 10px);
+    z-index: 0;
+  }
+  .term-item.clash { box-shadow: inset 0 0 0 2px #9d1c1c; }
+  .term-item.da { box-shadow: inset 3px 0 0 #1f7a45; }
+  .term-item.da.clash { box-shadow: inset 3px 0 0 #1f7a45, inset 0 0 0 2px #9d1c1c; }
+  .term-item.on { outline: 2px solid var(--blue); z-index: 2; }
+  #termine .act.on { background: #e5eef6; border-color: var(--blue); color: var(--blue); }
+  .term-res { border-top: 1px solid var(--line); padding: 10px 0; }
+  .term-res-head, .term-dayrow, .term-add { display: flex; gap: 8px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
+  .term-dow { width: 28px; font-size: 12px; color: var(--muted); }
+  .term-time { width: 68px; height: 28px; border: 1px solid #b7bcc2; border-radius: 5px; padding: 0 6px; }
+  .term-note { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <button class="tool" data-open="patienten" type="button"><svg viewBox="0 0 24 24"><path d="M8.5 7h11M8.5 12h11M8.5 17h11M4 7h2M4 12h2M4 17h2"/></svg><span>Patienten</span></button>
+  <button class="tool" data-open="akte" type="button"><svg viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V20.5H7z"/><path d="M14 3.5V8h4"/><path d="M9.5 12h6M9.5 15.5h6"/></svg><span>Patientenakte</span></button>
+  <button class="tool" data-open="abrechnung" type="button"><svg viewBox="0 0 24 24"><rect x="6" y="3.5" width="12" height="17" rx="1.5"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span>Abrechnung</span></button>
+  <button class="tool" data-open="medikamente" type="button"><svg viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="6.5" rx="3.2" transform="rotate(-30 12 12)"/><path d="M12 7.2v9.6" transform="rotate(-30 12 12)"/></svg><span>Medikamente</span></button>
+  <button class="tool" data-open="medikation" type="button"><svg viewBox="0 0 24 24"><path d="M5 6.5h14M5 12h14M5 17.5h9"/></svg><span>Medikation</span></button>
+  <button class="tool" data-open="rezept" type="button"><svg viewBox="0 0 24 24"><path d="M7 3.5h8l3 3V20.5H7z"/><path d="M15 3.5V7h3"/><path d="M9.5 12h5M9.5 15.5h3.5"/></svg><span>Rezept</span></button>
+  <button class="tool" data-open="labor" type="button"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 10h14M5 14h14M5 18h14M9 4v16"/></svg><span>Labor</span></button>
+  <button class="tool" data-open="dateien" type="button"><svg viewBox="0 0 24 24"><path d="M3.5 8.5V19h17V8.5H12l-2-2.5H3.5z"/></svg><span>Dateien</span></button>
+  <button class="tool" data-open="briefe" type="button"><svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="1.5"/><path d="M4 7l8 6 8-6"/></svg><span>Briefe</span></button>
+  <button class="tool" data-open="termine" type="button"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M4 9.5h16M8 3.5v3M16 3.5v3"/></svg><span>Termine</span></button>
+  <button class="tool" data-open="praxis" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6.1 6.1l1.6 1.6M16.3 16.3l1.6 1.6M17.9 6.1l-1.6 1.6M7.7 16.3l-1.6 1.6"/></svg><span>Einstellungen</span></button>
+</div>
+<div id="warte-strip">
+  <button class="act tiny" id="warte-open" type="button">Wartezimmer</button>
+  <button class="act tiny" id="warte-add" type="button" disabled>In WZ</button>
+  <div id="warte-names"></div>
+</div>
+<div id="desk">
+  <!-- Open chart. The footer field takes a shortcut, then Enter. -->
+  <section class="win show" id="akte" style="left:20px;top:14px;right:20px;height:calc(100% - 28px)">
+    <div class="title">Patientenakte<button class="x" data-close="akte" type="button">×</button></div>
+    <div class="who-line">
+      <div class="who" id="open-stamm"></div>
+      <div class="headnote" id="dauer" hidden></div>
+      <div class="headnote cave" id="cave" hidden></div>
+    </div>
+    <div class="rel" id="rels" hidden></div>
+    <div class="sheet" id="sheet"></div>
+    <form class="foot" id="cmd">
+      <input id="kuerzel" autocomplete="off" spellcheck="false" aria-label="Kürzel">
+      <span class="hint" id="hint">Kürzel, dann Enter</span>
+    </form>
+  </section>
+
+  <!-- Billing for the open chart. -->
+  <section class="win" id="abrechnung" style="left:360px;top:36px;width:680px;height:620px">
+    <div class="title">Abrechnung<button class="x" data-close="abrechnung" type="button">×</button></div>
+    <div class="who" id="bill-who"></div>
+    <div class="sheet"><div class="pad" id="bill-pad"></div></div>
+  </section>
+
+  <!-- Medication plan. -->
+  <section class="win" id="medikation" style="left:28px;top:24px;width:1180px;height:520px">
+    <div class="title">Medikation<button class="x" data-close="medikation" type="button">×</button></div>
+    <div class="who" id="plan-who"></div>
+    <div class="sheet"><div class="pad" id="plan-pad"></div></div>
+  </section>
+
+  <!-- Intake list, for printing. -->
+  <section class="win" id="einnahme" style="left:40px;top:20px;width:1100px;height:560px">
+    <div class="title no-print">Einnahmeliste<button class="x" data-close="einnahme" type="button">×</button></div>
+    <div class="sheet"><div class="pad" id="intake-pad"></div></div>
+  </section>
+
+  <!-- Medicine search. -->
+  <section class="win" id="medikamente" style="left:60px;top:20px;width:700px;height:640px">
+    <div class="title">Medikamente<button class="x" data-close="medikamente" type="button">×</button></div>
+    <div class="sheet">
+      <div class="pad">
+        <input class="search" id="med-search" placeholder="Suchen" autocomplete="off">
+        <p class="hint" id="med-mode"></p>
+        <div id="med-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Draft prescription. -->
+  <section class="win" id="rezept" style="left:80px;top:16px;width:720px;height:700px">
+    <div class="title">Rezept<button class="x" data-close="rezept" type="button">×</button></div>
+    <div class="who" id="rx-who"></div>
+    <div class="sheet">
+      <div class="pad">
+        <div id="rx-plan"></div>
+        <div id="rx-lines"></div>
+        <div class="gap" style="margin-top:12px">
+          <button class="act" id="pick-med" type="button">Medikament wählen</button>
+          <button class="act primary" id="make-rx" type="button">Blatt</button>
+        </div>
+        <p class="hint" id="rx-note" style="margin-top:14px">Ein Blatt fasst höchstens sechs Medikamente. Weitere kommen auf das nächste Blatt.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Printed private prescription. -->
+  <section class="win" id="privatrezept" style="left:40px;top:8px;width:920px;height:740px">
+    <div class="title no-print">Privatrezept<button class="x" data-close="privatrezept" type="button">×</button></div>
+    <div class="sheet"><div class="pad" id="rx-sheet"></div></div>
+  </section>
+
+  <!-- Lab spreadsheet. A file is only proposed until the user confirms the rows. -->
+  <section class="win" id="labor" style="left:24px;top:12px;width:1180px;height:700px">
+    <div class="title">Labor<button class="x" data-close="labor" type="button">×</button></div>
+    <div class="who" id="labor-who"></div>
+    <div id="labor-tools"></div>
+    <div class="sheet" id="labor-sheet"></div>
+    <input id="labor-file" type="file" hidden accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.rtf,.doc,image/*,application/pdf">
+  </section>
+
+  <!-- Files of the open chart. A click opens the working copy. -->
+  <section class="win" id="dateien" style="left:200px;top:24px;width:760px;height:640px">
+    <div class="title">Dateien<button class="x" data-close="dateien" type="button">×</button></div>
+    <div class="who" id="file-who"></div>
+    <div class="sheet">
+      <div class="pad">
+        <button class="act" id="file-add" type="button">Aufnehmen</button>
+        <input id="file-input" type="file" hidden>
+        <p class="hint" id="file-hint">Ein Klick öffnet die Datei im zugehörigen Programm. Auf Deutsch schreibt eine deutsche Fassung unter das Original.</p>
+        <div id="file-items"></div>
+        <div id="file-view"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Letters. The window address is the patient, or one row from the address book. -->
+  <section class="win" id="briefe" style="left:280px;top:24px;width:680px;height:720px">
+    <div class="title">Briefe<button class="x" data-close="briefe" type="button">×</button></div>
+    <div class="who" id="letter-who"></div>
+    <div class="sheet">
+      <div class="pad">
+        <h2>Aus der Kartei</h2>
+        <div id="letter-picks" class="letter-picks"></div>
+        <div class="inline">
+          <button class="act tiny" id="letter-all" type="button">Alle Texte</button>
+          <button class="act tiny" id="letter-take" type="button">In den Brief</button>
+        </div>
+        <div id="letter-list"></div>
+        <div class="field" style="margin-top:12px">
+          <label for="letter-adresse">Empfänger</label>
+          <div class="inline">
+            <select id="letter-adresse">
+              <option value="">Patient</option>
+            </select>
+            <button class="act tiny" id="letter-adressen" type="button">Adressen</button>
+          </div>
+          <p class="hint" id="letter-adresse-note">Der Brief geht an die Anschrift in der Akte.</p>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label for="letter-betreff">Betreff</label>
+          <input id="letter-betreff" autocomplete="off">
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label for="letter-text">Text</label>
+          <textarea id="letter-text" style="min-height:140px"></textarea>
+        </div>
+        <label class="hint" style="display:flex;gap:8px;align-items:center;margin-top:10px">
+          <input id="letter-hu" type="checkbox"> Auch auf Ungarisch
+        </label>
+        <button class="act primary" id="open-letter" type="button" style="margin-top:12px">In LibreOffice öffnen</button>
+        <p class="hint" id="letter-note" style="margin-top:14px">Ankreuzen und in den Brief übernehmen. Der Brief heißt nach Patient und Datum und steht in der Kartei. Ein Klick auf die Zeile öffnet ihn wieder. Ungarisch bleibt auf diesem Rechner. Den ungarischen Text gegenlesen, bevor du den Brief mitgibst.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Master data of one person. Creating a relative from here does not switch the open chart. -->
+  <section class="win" id="stammdaten" style="left:120px;top:16px;width:900px;height:700px">
+    <div class="title">Stammdaten<button class="x" data-close="stammdaten" type="button">×</button></div>
+    <div class="sheet">
+      <form class="form" id="stamm-form" autocomplete="off">
+        <p class="banner" id="stamm-banner" hidden></p>
+        <div class="field"><label for="st-species">Spezies</label>
+          <select id="st-species">
+            <option value="mensch">Mensch</option>
+            <option value="hund">Hund</option>
+            <option value="pferd">Pferd</option>
+            <option value="tier">Tier</option>
+          </select>
+        </div>
+        <div class="field"><label for="st-geschlecht">Geschlecht</label>
+          <select id="st-geschlecht">
+            <option value="">keine Angabe</option>
+            <option value="w">weiblich</option>
+            <option value="m">männlich</option>
+            <option value="d">divers</option>
+          </select>
+        </div>
+        <div class="field"><label for="st-name">Nachname</label><input id="st-name" maxlength="30"></div>
+        <div class="field"><label for="st-vor">Vorname</label><input id="st-vor" maxlength="30"></div>
+        <div class="field"><label for="st-geb">Geburtsdatum</label><input id="st-geb" placeholder="tt.mm.jjjj"></div>
+        <div class="field"><label for="st-gort">Geburtsort</label><input id="st-gort"></div>
+        <div class="field"><label for="st-wohn">Wohnort</label><input id="st-wohn"></div>
+        <div class="field"><label for="st-plz">PLZ</label><input id="st-plz"></div>
+        <div class="field"><label for="st-land">Land</label><input id="st-land"></div>
+        <div class="field"><label for="st-pass">Personalausweisnummer</label><input id="st-pass" maxlength="20"></div>
+        <div class="field wide"><label for="st-str">Straße, Hausnummer, Tür</label><input id="st-str"></div>
+        <div class="field wide"><label for="st-mutter">Geburtsname der Mutter</label><input id="st-mutter"></div>
+        <div class="field"><label for="st-vers">Versicherungs- oder TAJ-Nummer</label><input id="st-vers"></div>
+        <div class="field"><label for="st-kasse">Krankenkasse</label><input id="st-kasse"></div>
+        <div class="field wide" id="empf-block">
+          <label for="st-empf">Rechnungsempfänger</label>
+          <div class="empf">
+            <input id="st-empf" placeholder="Nachname, Vorname">
+            <button class="act" id="empf-neu" type="button">Aufnehmen</button>
+            <button class="act" id="empf-open" type="button">Öffnen</button>
+          </div>
+        </div>
+        <p class="hint field wide" id="rel-hint">Zuerst die Art eintragen, dann aus der Liste wählen. Fehlt die Person dort, neu aufnehmen. Die Akte bleibt offen.</p>
+        <div class="field" id="rel-art-field"><label for="rel-art">Art der Beziehung</label><input id="rel-art" placeholder="Halterin, Mutter, Vater, Ehemann"></div>
+        <div class="field wide" id="rel-add-field"><button class="act" id="rel-add" type="button">Aus der Liste wählen</button></div>
+        <div class="field wide" id="rel-list"></div>
+        <div class="field wide gap">
+          <button class="act primary" id="stamm-save" type="submit">Speichern</button>
+          <button class="act" id="stamm-delete" type="button" hidden>Löschen</button>
+          <button class="act" id="stamm-back" type="button" hidden>Zur Akte</button>
+          <p class="hint" id="stamm-note"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Settings. Practice identity, the fee catalog and the templates. No chart is required. -->
+  <section class="win" id="praxis" style="left:160px;top:16px;width:1000px;height:700px">
+    <div class="title">Einstellungen<button class="x" data-close="praxis" type="button">×</button></div>
+    <div class="sheet set-sheet">
+      <div class="set-body">
+        <nav class="set-nav">
+          <button type="button" data-set="praxis" class="on">Praxis</button>
+          <button type="button" data-set="adressen">Adressen</button>
+          <button type="button" data-set="bausteine">Bausteine</button>
+          <button type="button" data-set="gebuehren">Gebühren</button>
+          <button type="button" data-set="vorlagen">Vorlagen</button>
+        </nav>
+        <div class="set-main">
+          <div class="set-pane" id="set-praxis">
+            <form class="form" id="praxis-form" autocomplete="off">
+              <div class="field"><label for="px-titel">Titel</label><input id="px-titel"></div>
+              <div class="field"><label for="px-fach">Fach</label><input id="px-fach"></div>
+              <div class="field"><label for="px-name">Name</label><input id="px-name"></div>
+              <div class="field"><label for="px-vor">Vorname</label><input id="px-vor"></div>
+              <div class="field"><label for="px-nr">Arztnummer</label><input id="px-nr"></div>
+              <div class="field wide"><label for="px-adr">Adresse</label><textarea id="px-adr"></textarea></div>
+              <div class="field"><label for="px-iban">IBAN</label><input id="px-iban" maxlength="42" autocomplete="off" spellcheck="false"></div>
+              <div class="field"><label for="px-bic">BIC</label><input id="px-bic" maxlength="14" autocomplete="off" spellcheck="false"></div>
+              <p class="hint field wide">IBAN und BIC stehen auf der gedruckten Rechnung. Leer lassen lässt die Bankverbindung weg.</p>
+              <div class="field wide">
+                <label>Telefonnummern</label>
+                <div id="px-tels"></div>
+                <button class="act" id="px-add-tel" type="button" style="margin-top:8px">Nummer hinzufügen</button>
+              </div>
+              <div class="field wide">
+                <label>Unterschrift</label>
+                <button class="act" id="px-sign" type="button">Bild wählen</button>
+                <input id="px-sign-file" type="file" accept="image/*" hidden>
+                <img id="px-sign-preview" alt="" hidden>
+              </div>
+              <div class="field wide">
+                <button class="act primary" id="px-save" type="submit">Speichern</button>
+                <p class="hint" id="px-note"></p>
+              </div>
+            </form>
+          </div>
+          <div class="set-pane" id="set-adressen" hidden>
+            <div class="pad" style="padding-bottom:0">
+              <input class="search" id="adr-search" placeholder="Suchen" autocomplete="off">
+              <div id="adr-list"></div>
+              <h2 id="adr-heading">Neue Adresse</h2>
+            </div>
+            <form class="form" id="adr-form" autocomplete="off">
+              <div class="field"><label for="adr-art">Art</label>
+                <select id="adr-art">
+                  <option value="arzt">Arzt</option>
+                  <option value="versicherung">Versicherung</option>
+                  <option value="sonst">Sonstige</option>
+                </select>
+              </div>
+              <div class="field"><label for="adr-anrede">Anrede im Fenster</label><input id="adr-anrede" maxlength="40" placeholder="Herrn, Frau, Firma"></div>
+              <div class="field wide"><label for="adr-name">Name</label><input id="adr-name" maxlength="80"></div>
+              <div class="field wide"><label for="adr-zusatz">Zusatz</label><input id="adr-zusatz" maxlength="80" placeholder="Fach, Abteilung"></div>
+              <div class="field wide"><label for="adr-strasse">Straße, Hausnummer</label><input id="adr-strasse" maxlength="120"></div>
+              <div class="field"><label for="adr-plz">PLZ</label><input id="adr-plz" maxlength="5"></div>
+              <div class="field"><label for="adr-ort">Ort</label><input id="adr-ort" maxlength="80"></div>
+              <div class="field"><label for="adr-telefon">Telefon</label><input id="adr-telefon" maxlength="40"></div>
+              <div class="field"><label for="adr-notiz">Notiz</label><input id="adr-notiz" maxlength="200"></div>
+              <p class="hint field wide">Telefon und Notiz stehen nur hier, nicht auf dem Brief. Die Anrede ist die erste Zeile im Fenster. Leer beginnt mit dem Namen.</p>
+              <div class="field wide gap">
+                <button class="act primary" id="adr-save" type="submit">Aufnehmen</button>
+                <button class="act" id="adr-new" type="button">Leeren</button>
+                <button class="act" id="adr-delete" type="button" hidden>Entfernen</button>
+                <p class="hint" id="adr-note"></p>
+              </div>
+            </form>
+          </div>
+          <div class="set-pane" id="set-bausteine" hidden>
+            <div class="pad" style="padding-bottom:0">
+              <input class="search" id="bau-search" placeholder="Suchen" autocomplete="off">
+              <div id="bau-list"></div>
+              <h2 id="bau-heading">Neuer Textbaustein</h2>
+            </div>
+            <form class="form" id="bau-form" autocomplete="off">
+              <div class="field"><label for="bau-kind">Rubrik</label>
+                <select id="bau-kind">
+                  <option value="A">Anamnese</option>
+                  <option value="B">Befund</option>
+                  <option value="D">Diagnose</option>
+                  <option value="DD">Dauerdiagnose</option>
+                  <option value="CAVE">CAVE</option>
+                  <option value="PR">Procedere</option>
+                  <option value="I">Info</option>
+                  <option value="L">Labor</option>
+                </select>
+              </div>
+              <div class="field"><label for="bau-code">Kürzel</label><input id="bau-code" maxlength="16" spellcheck="false" autocomplete="off"></div>
+              <div class="field wide"><label for="bau-text">Text</label><textarea id="bau-text"></textarea></div>
+              <p class="hint field wide">In der Akte das Kürzel und Enter. Steht dasselbe Kürzel in mehreren Rubriken, die Rubrik davor setzen, zum Beispiel B phar. In einer Zeile ersetzt Tab das Kürzel dieser Rubrik. D und DD mit einem Kode bleiben der Diagnosenkatalog.</p>
+              <div class="field wide gap">
+                <button class="act primary" id="bau-save" type="submit">Aufnehmen</button>
+                <button class="act" id="bau-use" type="button">In die Akte</button>
+                <button class="act" id="bau-new" type="button">Leeren</button>
+                <button class="act" id="bau-delete" type="button" hidden>Entfernen</button>
+                <p class="hint" id="bau-note"></p>
+              </div>
+            </form>
+          </div>
+          <div class="set-pane" id="set-gebuehren" hidden>
+            <div class="pad">
+              <h2>Standardfaktor</h2>
+              <div class="inline">
+                <input id="set-faktor" placeholder="leer = 1" aria-label="Standardfaktor" style="width:140px" autocomplete="off">
+                <button class="act" id="set-faktor-save" type="button">Speichern</button>
+              </div>
+              <p class="hint" id="set-faktor-note">Leer bedeutet Faktor 1. Er gilt, wenn beim Buchen kein anderer Faktor angegeben ist.</p>
+              <input class="search" id="set-fee-search" placeholder="Suchen" autocomplete="off">
+              <div id="set-fee-list"></div>
+              <h2>Neue Gebühr</h2>
+              <div class="inline">
+                <input id="cat-code" placeholder="Kürzel" aria-label="Kürzel" maxlength="40" style="width:120px" autocomplete="off">
+                <input id="cat-betrag" placeholder="Einfachsatz" aria-label="Einfachsatz" style="width:130px" autocomplete="off">
+              </div>
+              <input class="search" id="cat-text" placeholder="Bezeichnung" aria-label="Bezeichnung" maxlength="200" autocomplete="off">
+              <button class="act" id="cat-save" type="button">In den Katalog</button>
+              <p class="hint" id="cat-note">Der Betrag ist der einfache Satz. ZI setzt die Gebühr an den Patienten.</p>
+              <p class="hint" id="set-fee-note"></p>
+            </div>
+          </div>
+          <div class="set-pane" id="set-vorlagen" hidden>
+            <div class="pad" id="set-vorlagen-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fee catalog. The amount is the simple fee. The factor is chosen when the line is charged. -->
+  <section class="win" id="positionen" style="left:360px;top:40px;width:640px;height:700px">
+    <div class="title">Abrechnungsposition<button class="x" data-close="positionen" type="button">×</button></div>
+    <div class="who" id="pos-who"></div>
+    <div class="sheet">
+      <div class="pad">
+        <div class="inline">
+          <input id="pos-datum" placeholder="tt.mm.jjjj" aria-label="Behandlungsdatum" style="width:120px" autocomplete="off">
+          <input id="pos-faktor" placeholder="Standard" aria-label="Faktor" style="width:110px" autocomplete="off">
+          <span class="hint" id="pos-faktor-note">Faktor 1 übernimmt den Katalogbetrag.</span>
+        </div>
+        <input class="search" id="pos-search" placeholder="Suchen" autocomplete="off">
+        <div id="pos-list"></div>
+        <p class="hint">Eine neue Gebühr legt man unter Einstellungen an. Ein Klick hier setzt die Zeile an den Patienten.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Patient list and person picker. -->
+  <section class="win" id="patienten" style="left:160px;top:24px;width:960px;height:480px">
+    <div class="title">Patientenliste<button class="x" data-close="patienten" type="button">×</button></div>
+    <div class="pad pat-filters">
+      <p class="hint" id="pat-pick" hidden></p>
+      <input class="search" id="pat-search" placeholder="Nummer, Name, Datum, Ort, PLZ …" autocomplete="off">
+      <p class="hint criteria">Ein Feld für Nummer, Name, Geburtsdatum, Geburtsort, Wohnort, PLZ, Land, Straße, Ausweis, Versicherung, Krankenkasse, Mutter, Spezies.</p>
+    </div>
+    <div class="sheet"><div id="pat-list"></div></div>
+    <div class="foot">
+      <button class="act" id="pat-new" type="button">Neu aufnehmen</button>
+      <button class="act" id="pat-import" type="button">Besuche einlesen</button>
+      <input id="pat-import-file" type="file" accept="application/json,.json" hidden>
+      <span class="hint" id="pat-count"></span>
+    </div>
+  </section>
+
+  <!-- Shortcut list. The footer input keeps the id kuerzel. This window is kuerzelliste. -->
+  <section class="win" id="kuerzelliste" style="left:160px;top:28px;width:640px;height:640px">
+    <div class="title">Kürzel<button class="x" data-close="kuerzelliste" type="button">×</button></div>
+    <div class="sheet">
+      <div class="pad">
+        <div id="kuerzel-list"></div>
+        <h2>Eigenes Kürzel</h2>
+        <div class="inline">
+          <input id="kuerzel-code" placeholder="Kürzel" maxlength="8" aria-label="Neues Kürzel" style="width:120px" autocomplete="off">
+          <input id="kuerzel-label" placeholder="Bezeichnung" maxlength="40" aria-label="Bezeichnung" style="width:240px" autocomplete="off">
+          <button class="act" id="kuerzel-save" type="button">Merken</button>
+        </div>
+        <p class="hint" id="kuerzel-note">Ein eigenes Kürzel legt eine Info mit dieser Bezeichnung an. Einen Textblock legt man unter Einstellungen bei Bausteine an.</p>
+        <div id="kuerzel-eigene"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Diagnosis catalog. An own row wins over the official title with the same code. -->
+  <section class="win" id="diagnosen" style="left:120px;top:24px;width:760px;height:680px">
+    <div class="title">Diagnosen<button class="x" data-close="diagnosen" type="button">×</button></div>
+    <div class="sheet">
+      <div class="pad">
+        <input class="search" id="dx-search" placeholder="Kürzel, ICD-Code oder Text" aria-label="Diagnose suchen" autocomplete="off">
+        <p class="hint" id="dx-note">ICD-10-GM 2026, BfArM, Stand 12.09.2025. D und der Kode schreiben die Zeile in die Akte. Eine eigene Zeile gilt vor demselben Kode.</p>
+        <div id="dx-list"></div>
+        <h2>Eigene Diagnose</h2>
+        <div class="inline">
+          <input id="dx-code" placeholder="Kürzel" maxlength="16" aria-label="Kürzel" style="width:140px" autocomplete="off">
+          <input id="dx-kurz" placeholder="Diagnose" maxlength="200" aria-label="Diagnose" style="width:360px" autocomplete="off">
+        </div>
+        <input class="search" id="dx-lang" placeholder="Diagnose Langtext" maxlength="300" aria-label="Diagnose Langtext" autocomplete="off">
+        <button class="act" id="dx-save" type="button">Merken</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Waiting room. WZ seats an existing chart and does not switch the open one. A name on the strip does. -->
+  <section class="win" id="wartezimmer" style="left:24px;top:16px;width:520px;height:620px">
+    <div class="title">Wartezimmer<button class="x" data-close="wartezimmer" type="button">×</button></div>
+    <div class="sheet">
+      <div class="pad">
+        <input class="search" id="warte-search" placeholder="Name oder Nummer" aria-label="Patient suchen" autocomplete="off">
+        <p class="hint" id="warte-note">Mindestens zwei Buchstaben oder eine Nummer. Die Person muss schon eine Akte haben.</p>
+        <div id="warte-hits"></div>
+        <div id="warte-offer" hidden>
+          <div class="inline">
+            <span id="warte-chosen"></span>
+            <label>Dauer <input id="warte-dauer" inputmode="numeric" value="20" aria-label="Dauer in Minuten"> Min.</label>
+          </div>
+          <div id="warte-appointments"></div>
+          <div id="warte-free"></div>
+          <button class="act" id="warte-list" type="button">Auf die Warteliste</button>
+        </div>
+        <h2>Anwesend</h2>
+        <div id="warte-here"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Week of every resource. TER opens it with or without a chart. -->
+  <section class="win" id="termine" style="left:12px;top:8px;right:12px;height:calc(100% - 16px)">
+    <div class="title">Termine<button class="x" data-close="termine" type="button">×</button></div>
+    <div class="term-tools">
+      <button class="act" id="term-prev" type="button">Zurück</button>
+      <button class="act" id="term-today" type="button">Heute</button>
+      <button class="act" id="term-next" type="button">Weiter</button>
+      <span id="term-week"></span>
+      <label>Dauer <input id="term-dauer" inputmode="numeric" value="20" aria-label="Dauer in Minuten"> Min.</label>
+      <label>Raster
+        <select id="term-raster" aria-label="Raster">
+          <option value="10">10 Min.</option>
+          <option value="20">20 Min.</option>
+        </select>
+      </label>
+      <button class="act" id="term-book" type="button">Termin</button>
+      <button class="act" id="term-block" type="button">Blocken</button>
+      <button class="act" id="term-setup" type="button">Einrichten</button>
+      <span id="term-status"></span>
+      <button class="act" id="term-arrive" type="button" hidden>Anwesend</button>
+      <button class="act" id="term-drop" type="button" hidden>Aufheben</button>
+    </div>
+    <div class="term-tools">
+      <span>Urlaub vom</span>
+      <input id="term-url-von" placeholder="tt.mm.jjjj" aria-label="Urlaub von" autocomplete="off">
+      <span>bis</span>
+      <input id="term-url-bis" placeholder="tt.mm.jjjj" aria-label="Urlaub bis" autocomplete="off">
+      <select id="term-url-res" aria-label="Urlaub für"></select>
+      <input id="term-url-note" placeholder="Grund" maxlength="200" aria-label="Grund" autocomplete="off">
+      <button class="act" id="term-url-add" type="button">Blocken</button>
+    </div>
+    <div class="sheet" id="term-sheet"></div>
+  </section>
+
+  <!-- Printed invoice. -->
+  <section class="win" id="rechnung" style="left:300px;top:16px;width:640px;height:700px">
+    <div class="title no-print">Rechnung<button class="x" data-close="rechnung" type="button">×</button></div>
+    <div class="sheet"><div class="pad" id="invoice-pad"></div></div>
+  </section>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

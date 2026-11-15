@@ -1,0 +1,15 @@
+# Laufende Akte und Praxisdaten. Der erste Start legt die Ordner leer an.
+/data/
+/sicherungen/
+/dateien/
+/briefe/
+/kuerzel/eigene.json
+/parameter/eigene.json
+
+# ICD-Datei, ungarische Übersetzung, mitgeliefertes Tesseract
+/import/
+/uebersetzung/
+/ocr/
+
+# Umzugsnotiz dieser Installation
+/WEITER.txt
