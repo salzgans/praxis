@@ -1,6 +1,10 @@
 # Praxis
 
-Lokale Praxisakte. Die tägliche Bedienung steht in `HANDBUCH.md`, der Aufbau in `DOKUMENTATION.md`, das Aufsetzen auf einem weiteren Rechner in `INSTALL.txt`. Die Nutzung steht in `LICENSE`. Es ist die MIT-Lizenz.
+Praxis ist eine Akte für eine einzelne Praxis auf einem Rechner. Sie läuft im Browser. Die Kartei, die Briefe, die Privatrezepte, die Rechnungen, das Labor, die Termine und das Wartezimmer liegen in einer SQLite-Datei auf diesem Rechner. Menschen, Hunde, Pferde und andere Tiere teilen sich dieselbe Kartei. Eine Anmeldung gibt es nicht. Der Server nimmt Verbindungen nur von diesem Rechner an, solange man ihn nicht ausdrücklich für das Praxisnetz öffnet.
+
+Wer das Programm zum ersten Mal startet, bekommt eine leere Akte. Praxisangaben, Gebühren und Arzneimittel trägt man selbst ein. Die Klassentitel der ICD-10-GM kann man vom BfArM herunterladen und einbinden, wie unten beschrieben. Ein amtliches Gebührenverzeichnis und eine amtliche Arzneimittelliste liegen nicht bei.
+
+Die tägliche Bedienung steht in `HANDBUCH.md`, der Aufbau in `DOKUMENTATION.md`, das Aufsetzen auf einem weiteren Rechner in `INSTALL.txt`. Die Nutzung steht in `LICENSE`. Es ist die MIT-Lizenz.
 
 ## Arzneimittel
 
